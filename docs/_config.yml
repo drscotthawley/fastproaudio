@@ -2,7 +2,7 @@ repository: drscotthawley/fastproaudio
 output: web
 topnav_title: fastproaudio
 site_title: fastproaudio
-company_name: Cppyright (c) 2021 by Scott H. Hawley and collaborators
+company_name: Copyright (c) 2021 by Scott H. Hawley and collaborators
 description: End-to-end audio with fastai
 # Set to false to disable KaTeX math
 use_math: true
