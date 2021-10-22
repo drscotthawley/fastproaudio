@@ -21,7 +21,7 @@ docs: $(SRC)
 git_update: fastproaudio docs
 	nbdev_build_lib
 	nbdev_build_docs
-	git add *.ipynb settings.ini README.md fastproaudio docs nbs
+	git add *.ipynb settings.ini README.md fastproaudio docs Makefile
 	git commit
 	git push
 
