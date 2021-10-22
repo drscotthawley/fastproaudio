@@ -12,7 +12,7 @@ This file will become your README and also the index of your documentation.
 
 Not ready for anyone else to use.
 
-```
+```python
 1+1
 ```
 

@@ -18,6 +18,13 @@ docs: $(SRC)
 	nbdev_build_docs
 	touch docs
 
+git_update: fastproaudio docs
+	nbdev_build_lib
+	nbdev_build_docs
+	git add *.ipynb settings.ini README.md fastproaudio docs nbs
+	git commit
+	git push
+
 test:
 	nbdev_test_nbs
 
