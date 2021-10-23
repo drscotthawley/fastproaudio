@@ -7,7 +7,17 @@ index = {"URLs.AUDIOMDPI": "00_core.ipynb",
          "URLs.SIGNALTRAIN_LA2A_1_1": "00_core.ipynb",
          "URLs.SIGNALTRAIN_LA2A_REDUCED": "00_core.ipynb",
          "zenodo_url_to_data_url": "00_core.ipynb",
-         "get_audio_data": "00_core.ipynb"}
+         "get_audio_data": "00_core.ipynb",
+         "print_stats": "00_core.ipynb",
+         "plot_waveform": "00_core.ipynb",
+         "plot_specgram": "00_core.ipynb",
+         "play_audio": "00_core.ipynb",
+         "inspect_file": "00_core.ipynb",
+         "plot_spectrogram": "00_core.ipynb",
+         "plot_mel_fbank": "00_core.ipynb",
+         "get_spectrogram": "00_core.ipynb",
+         "plot_pitch": "00_core.ipynb",
+         "plot_kaldi_pitch": "00_core.ipynb"}
 
 modules = ["core.py"]
 
