@@ -13,7 +13,7 @@ entries:
       title: fastproaudio core
       url: core.html
     - output: web,pdf
-      title: End-to-End Time Domain Audio with fastai
+      title: Demo&#58; End-to-End Time Domain Audio with fastai
       url: td_demo.html
     output: web
     title: fastproaudio
