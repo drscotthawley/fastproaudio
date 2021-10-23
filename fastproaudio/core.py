@@ -8,7 +8,7 @@ __all__ = ['zenodo_url_to_data_url', 'get_audio_data', 'print_stats', 'plot_wave
 
 #from fastai.vision.all import *
 from fastai.data.all import *
-from subprocess import Popen, PIPE
+#from subprocess import Popen, PIPE
 import pyzenodo3
 import torchaudio
 import librosa
