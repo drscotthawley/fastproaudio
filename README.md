@@ -2,7 +2,7 @@
 > End-to-end audio with fastai.
 
 
-This file will become your README and also the index of your documentation.
+Hi folks.  I just started this repo.  It's not ready for public use yet. -SH
 
 ## Install
 
@@ -10,15 +10,4 @@ This file will become your README and also the index of your documentation.
 
 ## How to use
 
-Not ready for anyone else to use.
-
-```python
-1+1
-```
-
-
-
-
-    2
-
-
+Workin' on it! 
