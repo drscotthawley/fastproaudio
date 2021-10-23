@@ -82,7 +82,7 @@ nb_path: "01_td_demo.ipynb"
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>As for data, we just use the fastaudio "speakers" dataset for now:</p>
+<h2 id="Possible-Datasets-and-Tasks">Possible Datasets and Tasks<a class="anchor-link" href="#Possible-Datasets-and-Tasks"> </a></h2><p>As for data, we just use the fastaudio "speakers" dataset for now:</p>
 
 </div>
 </div>
@@ -116,7 +116,7 @@ nb_path: "01_td_demo.ipynb"
 <li>We can always grab audio and then use Spotify's new <a href="https://github.com/spotify/pedalboard">Pedalboard</a> to add effects</li>
 <li><a href="https://zenodo.org/record/3562442">Marco Martinez' Leslie effects dataset</a> is a bit less than 1 GB. It has "dry" (input) and "tremelo" (target) directories.</li>
 </ul>
-<p>Since Christian Steinmetz uses SignalTrain data for his <a href="https://github.com/csteinmetz1/micro-tcn">Micro-TCN</a>, we'll do that, using the 200MB "Reduced" version I just made:</p>
+<h2 id="My-Choice:-Reproduce-Micro-TCN">My Choice: Reproduce Micro-TCN<a class="anchor-link" href="#My-Choice:-Reproduce-Micro-TCN"> </a></h2><p>I'll choose the task of reproducing Christian Steinmetz's <a href="https://github.com/csteinmetz1/micro-tcn">Micro-TCN</a> work for learning audio compressors. And rather than use the full 20 GB SignalTrain dataset, let's use the 200MB "Reduced" dataset I just made. It's only the first 10 seconds of each 20-minute audio file, but it's enough for a reasonably-quick demo.</p>
 
 </div>
 </div>
