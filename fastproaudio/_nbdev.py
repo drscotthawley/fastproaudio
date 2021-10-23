@@ -17,7 +17,9 @@ index = {"URLs.AUDIOMDPI": "00_core.ipynb",
          "plot_mel_fbank": "00_core.ipynb",
          "get_spectrogram": "00_core.ipynb",
          "plot_pitch": "00_core.ipynb",
-         "plot_kaldi_pitch": "00_core.ipynb"}
+         "plot_kaldi_pitch": "00_core.ipynb",
+         "plot_melspec": "00_core.ipynb",
+         "show_audio": "00_core.ipynb"}
 
 modules = ["core.py"]
 
