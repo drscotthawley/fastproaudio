@@ -60,6 +60,7 @@ nb_path: "01_td_demo.ipynb"
 <span class="kn">import</span> <span class="nn">torchaudio.functional</span> <span class="k">as</span> <span class="nn">F</span>
 <span class="kn">import</span> <span class="nn">torchaudio.transforms</span> <span class="k">as</span> <span class="nn">T</span>
 <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Audio</span> 
+
 <span class="kn">from</span> <span class="nn">fastproaudio.core</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="n">use_fastaudio</span> <span class="o">=</span> <span class="kc">False</span>
@@ -112,7 +113,7 @@ nb_path: "01_td_demo.ipynb"
 <li>We can always grab audio and then use Spotify's new <a href="https://github.com/spotify/pedalboard">Pedalboard</a> to add effects</li>
 <li><a href="https://zenodo.org/record/3562442">Marco Martinez' Leslie effects dataset</a> is a bit less than 1 GB. It has "dry" (input) and "tremelo" (target) directories.</li>
 </ul>
-<p>Marco's dataset and the SignalTrain LA2A dataset are both on Zenodo.  Since Christian Steinmetz uses SignalTrain data for his <a href="https://github.com/csteinmetz1/micro-tcn">Micro-TCN</a>, we'll do that:</p>
+<p>Marco's dataset and the SignalTrain LA2A dataset are both on Zenodo.  Since Christian Steinmetz uses SignalTrain data for his <a href="https://github.com/csteinmetz1/micro-tcn">Micro-TCN</a>, we'll do that, using the 200MB "Reduced" version I just made:</p>
 
 </div>
 </div>
@@ -124,14 +125,26 @@ nb_path: "01_td_demo.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#record = 3562442   # Marco&#39;s dataset of Leslie effects (1 GB)</span>
-<span class="c1">#record = 3824876   # SignalTrain dataset of LA2A, used by Christian (20 GB)</span>
-<span class="c1">#!zenodo_get {record}  # acutally I have a local copy in ~/datasets ;-) </span>
-
-<span class="n">st_data_path</span> <span class="o">=</span> <span class="s1">&#39;/home/shawley/datasets/SignalTrain_LA2A_Dataset_1.1/&#39;</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="n">get_audio_data</span><span class="p">(</span><span class="n">URLs</span><span class="o">.</span><span class="n">SIGNALTRAIN_LA2A_REDUCED</span><span class="p">);</span> <span class="n">path</span>
 </pre></div>
 
     </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>Path(&#39;/home/shawley/.fastai/data/SignalTrain_LA2A_Reduced&#39;)</pre>
+</div>
+
+</div>
+
 </div>
 </div>
 
