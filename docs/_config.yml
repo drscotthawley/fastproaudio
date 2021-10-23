@@ -11,6 +11,9 @@ google_analytics:
 # See http://nbdev.fast.ai/search for help with adding Search
 google_search:
 
+default_badges:
+  colab: true
+
 host: 127.0.0.1
 # the preview server used. Leave as is.
 port: 4000
@@ -20,7 +23,7 @@ exclude:
   - .idea/
   - .gitignore
   - vendor
- 
+
 exclude: [vendor]
 
 highlighter: rouge
@@ -61,6 +64,6 @@ sidebars:
 
 plugins:
     - jekyll-remote-theme
-    
+
 remote_theme: fastai/nbdev-jekyll-theme
 baseurl: /fastproaudio/
