@@ -50,7 +50,7 @@ def show_info(waveform, sample_rate):
     print(f"Shape: {tuple(waveform.shape)}, Dtype: {waveform.dtype}, Duration: {waveform.numpy().shape[-1]/sample_rate} s")
     print(f"Max: {waveform.max().item():6.3f},  Min: {waveform.min().item():6.3f}, Mean: {waveform.mean().item():6.3f}, Std Dev: {waveform.std().item():6.3f}")
 
-def plot_waveform(waveform, sample_rate, ax=None):
+def plot_waveform(waveform, sample_rate, ax=None, xlim=None, ylim=[-1,1]):
     "Waveform plot, from https://pytorch.org/tutorials/beginner/audio_preprocessing_tutorial.html"
     if ax is None: fig, ax = plt.subplots()
     waveform = waveform.numpy()
@@ -60,6 +60,7 @@ def plot_waveform(waveform, sample_rate, ax=None):
         label = f'Channel {c+1}' if num_channels > 1 else ''
         ax.plot(time_axis, waveform[c], linewidth=1, label=label)
     ax.grid(True)
+    if ylim: ax.set_ylim(ylim)
     ax.title.set_text('Waveform')
     ax.set_xlabel('Time (s)')
     if num_channels > 1: ax.legend()
