@@ -100,24 +100,25 @@ nb_path: "01_td_demo.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>     |████████████████████████████████| 1.7 MB 7.2 MB/s 
-     |████████████████████████████████| 189 kB 49.5 MB/s 
-     |████████████████████████████████| 2.9 MB 33.0 MB/s 
+<pre>     |████████████████████████████████| 1.7 MB 12.9 MB/s 
+     |████████████████████████████████| 189 kB 61.2 MB/s 
+     |████████████████████████████████| 2.9 MB 46.7 MB/s 
   Installing build dependencies ... done
   Getting requirements to build wheel ... done
     Preparing wheel metadata ... done
-     |████████████████████████████████| 56 kB 3.2 MB/s 
-     |████████████████████████████████| 1.9 MB 32.0 MB/s 
-     |████████████████████████████████| 1.9 MB 35.2 MB/s 
+     |████████████████████████████████| 56 kB 4.8 MB/s 
+     |████████████████████████████████| 1.9 MB 51.6 MB/s 
+     |████████████████████████████████| 1.9 MB 43.8 MB/s 
   Building wheel for fastproaudio (setup.py) ... done
   Building wheel for pyzenodo3 (PEP 517) ... done
-     |████████████████████████████████| 1.7 MB 8.3 MB/s            
-     |████████████████████████████████| 139 kB 47.5 MB/s            
-     |████████████████████████████████| 97 kB 6.4 MB/s             
+     |████████████████████████████████| 1.7 MB 14.2 MB/s            
+     |████████████████████████████████| 180 kB 73.1 MB/s            
+     |████████████████████████████████| 97 kB 9.0 MB/s             
   Preparing metadata (setup.py) ... done
-     |████████████████████████████████| 180 kB 53.6 MB/s            
   Preparing metadata (setup.py) ... done
-     |████████████████████████████████| 63 kB 1.9 MB/s             
+     |████████████████████████████████| 139 kB 62.4 MB/s            
+     |████████████████████████████████| 23.1 MB 1.5 MB/s             
+     |████████████████████████████████| 63 kB 2.2 MB/s             
   Building wheel for subprocess32 (setup.py) ... done
   Building wheel for pathtools (setup.py) ... done
 <span class="ansi-yellow-fg">WARNING: Running pip as the &#39;root&#39; user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv</span>
@@ -180,7 +181,8 @@ nb_path: "01_td_demo.ipynb"
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Download-and-Inspect-the-Data">Download and Inspect the Data<a class="anchor-link" href="#Download-and-Inspect-the-Data"> </a></h2>
+<h2 id="Download-and-Inspect-the-Data">Download and Inspect the Data<a class="anchor-link" href="#Download-and-Inspect-the-Data"> </a></h2><p>The Reduced dataset is mostly piano noises,whereas the full dataset has "everything and the kitchen sink."  (If you feel like downloading 20 GB instead of 200 MB, replcaed "REDUCED" with "1_1" below.)</p>
+
 </div>
 </div>
 </div>
@@ -934,7 +936,7 @@ pred   = torch.Size([8, 1, 51214])
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We can make the pred and target the same when we evalualte the loss:</p>
+<p>We can make the pred and target the same length by cropping when we evalualte the loss:</p>
 
 </div>
 </div>
@@ -996,8 +998,51 @@ pred   = torch.Size([8, 1, 51214])
 
 <div class="output_area">
 
+
+
+
+<div id="857195c8-08b5-4329-a287-d2eae0da226a"></div>
+<div class="output_subarea output_javascript ">
+<script type="text/javascript">
+var element = $('#857195c8-08b5-4329-a287-d2eae0da226a');
+
+        window._wandbApiKey = new Promise((resolve, reject) => {
+            function loadScript(url) {
+            return new Promise(function(resolve, reject) {
+                let newScript = document.createElement("script");
+                newScript.onerror = reject;
+                newScript.onload = resolve;
+                document.body.appendChild(newScript);
+                newScript.src = url;
+            });
+            }
+            loadScript("https://cdn.jsdelivr.net/npm/postmate/build/postmate.min.js").then(() => {
+            const iframe = document.createElement('iframe')
+            iframe.style.cssText = "width:0;height:0;border:none"
+            document.body.appendChild(iframe)
+            const handshake = new Postmate({
+                container: iframe,
+                url: 'https://wandb.ai/authorize'
+            });
+            const timeout = setTimeout(() => reject("Couldn't auto authenticate"), 5000)
+            handshake.then(function(child) {
+                child.on('authorize', data => {
+                    clearTimeout(timeout)
+                    resolve(data)
+                });
+            });
+            })
+        });
+    
+</script>
+</div>
+
+</div>
+
+<div class="output_area">
+
 <div class="output_subarea output_stream output_stderr output_text">
-<pre><span class="ansi-blue-intense-fg ansi-bold">wandb</span>: <span class="ansi-yellow-fg">WARNING</span> Calling wandb.login() after wandb.init() has no effect.
+<pre><span class="ansi-blue-intense-fg ansi-bold">wandb</span>: Appending key for api.wandb.ai to your netrc file: /root/.netrc
 </pre>
 </div>
 </div>
@@ -1084,49 +1129,10 @@ pred   = torch.Size([8, 1, 51214])
 
 <div class="output_area">
 
-
-<div class="output_html rendered_html output_subarea ">
-Finishing last run (ID:1lva8oyu) before initializing another...
+<div class="output_subarea output_stream output_stderr output_text">
+<pre><span class="ansi-blue-intense-fg ansi-bold">wandb</span>: Currently logged in as: <span class="ansi-yellow-fg">drscotthawley</span> (use `wandb login --relogin` to force relogin)
+</pre>
 </div>
-
-</div>
-
-<div class="output_area">
-
-
-<div class="output_html rendered_html output_subarea ">
-<br/>Waiting for W&B process to finish, PID 723... <strong style="color:green">(success).</strong>
-</div>
-
-</div>
-
-<div class="output_area">
-
-
-<div class="output_html rendered_html output_subarea ">
-<style>
-    table.wandb td:nth-child(1) { padding: 0 10px; text-align: right }
-    .wandb-row { display: flex; flex-direction: row; flex-wrap: wrap; width: 100% }
-    .wandb-col { display: flex; flex-direction: column; flex-basis: 100%; flex: 1; padding: 10px; }
-    </style>
-<div class="wandb-row"><div class="wandb-col">
-</div><div class="wandb-col">
-</div></div>
-Synced 4 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
-<br/>Synced <strong style="color:#cdcd00">dainty-field-42</strong>: <a href="https://wandb.ai/drscotthawley/micro-tcn-fastai/runs/1lva8oyu" target="_blank">https://wandb.ai/drscotthawley/micro-tcn-fastai/runs/1lva8oyu</a><br/>
-Find logs at: <code>./wandb/run-20211024_200318-1lva8oyu/logs</code><br/>
-
-</div>
-
-</div>
-
-<div class="output_area">
-
-
-<div class="output_html rendered_html output_subarea ">
-Successfully finished last run (ID:1lva8oyu). Initializing new run:<br/>
-</div>
-
 </div>
 
 <div class="output_area">
@@ -1134,7 +1140,7 @@ Successfully finished last run (ID:1lva8oyu). Initializing new run:<br/>
 
 <div class="output_html rendered_html output_subarea ">
 
-                    Syncing run <strong><a href="https://wandb.ai/drscotthawley/micro-tcn-fastai/runs/vg82hiui" target="_blank">splendid-donkey-43</a></strong> to <a href="https://wandb.ai/drscotthawley/micro-tcn-fastai" target="_blank">Weights & Biases</a> (<a href="https://docs.wandb.com/integrations/jupyter.html" target="_blank">docs</a>).<br/>
+                    Syncing run <strong><a href="https://wandb.ai/drscotthawley/micro-tcn-fastai/runs/1wr4csco" target="_blank">fresh-breeze-44</a></strong> to <a href="https://wandb.ai/drscotthawley/micro-tcn-fastai" target="_blank">Weights & Biases</a> (<a href="https://docs.wandb.com/integrations/jupyter.html" target="_blank">docs</a>).<br/>
 
                 
 </div>
@@ -1519,8 +1525,4 @@ lemme see if I can embed some results below:</p>
 </div>
 </div>
  
-
-<script type="application/vnd.jupyter.widget-state+json">
-{"2822a9554dfd4143940ac80b55685910": {"model_module": "@jupyter-widgets/controls", "model_name": "VBoxModel", "model_module_version": "1.5.0", "state": {"_view_name": "VBoxView", "_dom_classes": [], "_model_name": "VBoxModel", "_view_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "_view_count": null, "_view_module_version": "1.5.0", "box_style": "", "layout": "IPY_MODEL_05601985973742d08505a92aab2beb33", "_model_module": "@jupyter-widgets/controls", "children": ["IPY_MODEL_ef3db7eb176f4bf0b0e12b1469fc3aad", "IPY_MODEL_e38ed8e9e75e439b8b71ba7af7aeba9d"]}}, "05601985973742d08505a92aab2beb33": {"model_module": "@jupyter-widgets/base", "model_name": "LayoutModel", "model_module_version": "1.2.0", "state": {"_view_name": "LayoutView", "grid_template_rows": null, "right": null, "justify_content": null, "_view_module": "@jupyter-widgets/base", "overflow": null, "_model_module_version": "1.2.0", "_view_count": null, "flex_flow": null, "width": null, "min_width": null, "border": null, "align_items": null, "bottom": null, "_model_module": "@jupyter-widgets/base", "top": null, "grid_column": null, "overflow_y": null, "overflow_x": null, "grid_auto_flow": null, "grid_area": null, "grid_template_columns": null, "flex": null, "_model_name": "LayoutModel", "justify_items": null, "grid_row": null, "max_height": null, "align_content": null, "visibility": null, "align_self": null, "height": null, "min_height": null, "padding": null, "grid_auto_rows": null, "grid_gap": null, "max_width": null, "order": null, "_view_module_version": "1.2.0", "grid_template_areas": null, "object_position": null, "object_fit": null, "grid_auto_columns": null, "margin": null, "display": null, "left": null}}, "ef3db7eb176f4bf0b0e12b1469fc3aad": {"model_module": "@jupyter-widgets/controls", "model_name": "LabelModel", "model_module_version": "1.5.0", "state": {"_view_name": "LabelView", "style": "IPY_MODEL_17b41d02c3a04a2ab039d3cba9902fd0", "_dom_classes": [], "description": "", "_model_name": "LabelModel", "placeholder": "\u200b", "_view_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "value": " 0.01MB of 0.01MB uploaded (0.00MB deduped)\r", "_view_count": null, "_view_module_version": "1.5.0", "description_tooltip": null, "_model_module": "@jupyter-widgets/controls", "layout": "IPY_MODEL_f2a51ea1b64f4cf9aa6dbd852b544523"}}, "e38ed8e9e75e439b8b71ba7af7aeba9d": {"model_module": "@jupyter-widgets/controls", "model_name": "FloatProgressModel", "model_module_version": "1.5.0", "state": {"_view_name": "ProgressView", "style": "IPY_MODEL_73651d690fbf44ef98f7e592053233b8", "_dom_classes": [], "description": "", "_model_name": "FloatProgressModel", "bar_style": "", "max": 1, "_view_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "value": 1, "_view_count": null, "_view_module_version": "1.5.0", "orientation": "horizontal", "min": 0, "description_tooltip": null, "_model_module": "@jupyter-widgets/controls", "layout": "IPY_MODEL_06ab7fcd497b428fa1bf7e2b535b27b4"}}, "17b41d02c3a04a2ab039d3cba9902fd0": {"model_module": "@jupyter-widgets/controls", "model_name": "DescriptionStyleModel", "model_module_version": "1.5.0", "state": {"_view_name": "StyleView", "_model_name": "DescriptionStyleModel", "description_width": "", "_view_module": "@jupyter-widgets/base", "_model_module_version": "1.5.0", "_view_count": null, "_view_module_version": "1.2.0", "_model_module": "@jupyter-widgets/controls"}}, "f2a51ea1b64f4cf9aa6dbd852b544523": {"model_module": "@jupyter-widgets/base", "model_name": "LayoutModel", "model_module_version": "1.2.0", "state": {"_view_name": "LayoutView", "grid_template_rows": null, "right": null, "justify_content": null, "_view_module": "@jupyter-widgets/base", "overflow": null, "_model_module_version": "1.2.0", "_view_count": null, "flex_flow": null, "width": null, "min_width": null, "border": null, "align_items": null, "bottom": null, "_model_module": "@jupyter-widgets/base", "top": null, "grid_column": null, "overflow_y": null, "overflow_x": null, "grid_auto_flow": null, "grid_area": null, "grid_template_columns": null, "flex": null, "_model_name": "LayoutModel", "justify_items": null, "grid_row": null, "max_height": null, "align_content": null, "visibility": null, "align_self": null, "height": null, "min_height": null, "padding": null, "grid_auto_rows": null, "grid_gap": null, "max_width": null, "order": null, "_view_module_version": "1.2.0", "grid_template_areas": null, "object_position": null, "object_fit": null, "grid_auto_columns": null, "margin": null, "display": null, "left": null}}, "73651d690fbf44ef98f7e592053233b8": {"model_module": "@jupyter-widgets/controls", "model_name": "ProgressStyleModel", "model_module_version": "1.5.0", "state": {"_view_name": "StyleView", "_model_name": "ProgressStyleModel", "description_width": "", "_view_module": "@jupyter-widgets/base", "_model_module_version": "1.5.0", "_view_count": null, "_view_module_version": "1.2.0", "bar_color": null, "_model_module": "@jupyter-widgets/controls"}}, "06ab7fcd497b428fa1bf7e2b535b27b4": {"model_module": "@jupyter-widgets/base", "model_name": "LayoutModel", "model_module_version": "1.2.0", "state": {"_view_name": "LayoutView", "grid_template_rows": null, "right": null, "justify_content": null, "_view_module": "@jupyter-widgets/base", "overflow": null, "_model_module_version": "1.2.0", "_view_count": null, "flex_flow": null, "width": null, "min_width": null, "border": null, "align_items": null, "bottom": null, "_model_module": "@jupyter-widgets/base", "top": null, "grid_column": null, "overflow_y": null, "overflow_x": null, "grid_auto_flow": null, "grid_area": null, "grid_template_columns": null, "flex": null, "_model_name": "LayoutModel", "justify_items": null, "grid_row": null, "max_height": null, "align_content": null, "visibility": null, "align_self": null, "height": null, "min_height": null, "padding": null, "grid_auto_rows": null, "grid_gap": null, "max_width": null, "order": null, "_view_module_version": "1.2.0", "grid_template_areas": null, "object_position": null, "object_fit": null, "grid_auto_columns": null, "margin": null, "display": null, "left": null}}}
-</script>
 
