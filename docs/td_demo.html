@@ -1,13 +1,13 @@
 ---
 
-title: Demo&#58; End-to-End Time Domain Audio with fastai
+title: Demo of End-to-End Time Domain Audio with fastai
 
 
 keywords: fastai
 sidebar: home_sidebar
 
-summary: "Trying to make it work"
-description: "Trying to make it work"
+
+
 nb_path: "01_td_demo.ipynb"
 ---
 <!--
@@ -29,6 +29,30 @@ nb_path: "01_td_demo.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>fastaudio focuses on spectrograms. <code>fastai</code> use cases tend to focus on classification. We need to go beyond those. Instead we'll focus on two things:</p>
+<ol>
+<li><p>autoregressive prediction in the time domain. We'll use an LSTM -- essentially adapting the language model lessons</p>
+</li>
+<li><p>audio-to-audio processing/translation (e.g. audio effects). We'll use stacked 1D convolutions like a U-Net</p>
+</li>
+</ol>
+<p>(you probably noticed already that task #1 could be in task #2, for the case of translating to audio shifted ahead by one sample.)</p>
+<h4 id="&quot;How-many-channels-of-audio-are-we-going-to-use?&quot;">"How many channels of audio are we going to use?"<a class="anchor-link" href="#&quot;How-many-channels-of-audio-are-we-going-to-use?&quot;"> </a></h4><p>That's up to the dataset!  We'll try our best to assume that it's just mono.</p>
+<h4 id="&quot;What-other-fastai-datatypes/projects-are-relevant?&quot;">"What other fastai datatypes/projects are relevant?"<a class="anchor-link" href="#&quot;What-other-fastai-datatypes/projects-are-relevant?&quot;"> </a></h4><p>There are three packages that are relevant for sequence modeling:</p>
+<ol>
+<li><p><code>fastaudio</code>, as we mentioned, is only for spectrogram classification. The <code>AudioBlock</code> makes batches using an entire audio file which then gets converted to spectrograms.  Instead, we want to progressively grab sequences of audio samples and as (uniform-length) chunks.</p>
+</li>
+<li><p>The <a href="https://timeseriesai.github.io/tsai/">Time Series Prediction</a> package is relevant, but the only time series output it seems to support is <a href="https://timeseriesai.github.io/tsai/#Univariate-Forecasting">"univariate forecasting"</a>.  Nope.</p>
+</li>
+<li>Language Modeling, e.g. Chapters <a href="https://github.com/fastai/fastbook/blob/master/10_nlp.ipynb">10</a> and <a href="https://github.com/fastai/fastbook/blob/master/12_nlp_dive.ipynb">12</a> from fastbook. Yea, that's the closest. We can treat the audio samples as if they were word vectors/embeddings: just make the tokenizer and numericalize methods to be no-ops (or we could use mu-law encoding).  Nice thing is the dimensionality of the embeddings is just equal to how many channels of audio you have. </li>
+</ol>
+<p>We'll use <em>some</em> of fastaudio but we'll also liberally rewrite/overwrite whatever we want. We'll start with their imports..</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -457,8 +481,205 @@ Note: you may need to restart the kernel to use updated packages.
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">microtcn.data</span> <span class="kn">import</span> <span class="n">SignalTrainLA2ADataset</span>
+</pre></div>
 
-<span class="k">class</span> <span class="nc">Args</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>  <span class="c1"># stand-in for parseargs </span>
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">torch</span> 
+<span class="kn">import</span> <span class="nn">torchaudio</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">soundfile</span> <span class="k">as</span> <span class="nn">sf</span>
+<span class="n">torchaudio</span><span class="o">.</span><span class="n">set_audio_backend</span><span class="p">(</span><span class="s2">&quot;sox_io&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">SignalTrainLA2ADataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; SignalTrain LA2A dataset. Source: [10.5281/zenodo.3824876](https://zenodo.org/record/3824876).&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">16384</span><span class="p">,</span> <span class="n">preload</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">half</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fraction</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">use_soundfile</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            root_dir (str): Path to the root directory of the SignalTrain dataset.</span>
+<span class="sd">            subset (str, optional): Pull data either from &quot;train&quot;, &quot;val&quot;, &quot;test&quot;, or &quot;full&quot; subsets. (Default: &quot;train&quot;)</span>
+<span class="sd">            length (int, optional): Number of samples in the returned examples. (Default: 40)</span>
+<span class="sd">            preload (bool, optional): Read in all data into RAM during init. (Default: False)</span>
+<span class="sd">            half (bool, optional): Store the float32 audio as float16. (Default: True)</span>
+<span class="sd">            fraction (float, optional): Fraction of the data to load from the subset. (Default: 1.0)</span>
+<span class="sd">            use_soundfile (bool, optional): Use the soundfile library to load instead of torchaudio. (Default: False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span> <span class="o">=</span> <span class="n">root_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subset</span> <span class="o">=</span> <span class="n">subset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preload</span> <span class="o">=</span> <span class="n">preload</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">half</span> <span class="o">=</span> <span class="n">half</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fraction</span> <span class="o">=</span> <span class="n">fraction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_soundfile</span> <span class="o">=</span> <span class="n">use_soundfile</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subset</span> <span class="o">==</span> <span class="s2">&quot;full&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> <span class="s2">&quot;**&quot;</span><span class="p">,</span> <span class="s2">&quot;target_*.wav&quot;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_files</span>  <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> <span class="s2">&quot;**&quot;</span><span class="p">,</span> <span class="s2">&quot;input_*.wav&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># get all the target files files in the directory first</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subset</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span> <span class="s2">&quot;target_*.wav&quot;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_files</span>  <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subset</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span> <span class="s2">&quot;input_*.wav&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">examples</span> <span class="o">=</span> <span class="p">[]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">minutes</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># total number of hours of minutes in the subset</span>
+
+        <span class="c1"># ensure that the sets are ordered correctlty</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+        <span class="c1"># get the parameters </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.wav&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.wav&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)))</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_files</span><span class="p">]</span>
+
+        <span class="c1"># loop over files to count total length</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">tfile</span><span class="p">,</span> <span class="n">ifile</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_files</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_files</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)):</span>
+
+            <span class="n">ifile_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">ifile</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">tfile_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">tfile</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">ifile_id</span> <span class="o">!=</span> <span class="n">tfile_id</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found non-matching file ids: </span><span class="si">{</span><span class="n">ifile_id</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">tfile_id</span><span class="si">}</span><span class="s2">! Check dataset.&quot;</span><span class="p">)</span>
+
+            <span class="n">md</span> <span class="o">=</span> <span class="n">torchaudio</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">tfile</span><span class="p">)</span>
+            <span class="n">num_frames</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="n">num_frames</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preload</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;* Pre-loading... </span><span class="si">{</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="si">:</span><span class="s2">3d</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_files</span><span class="p">)</span><span class="si">:</span><span class="s2">3d</span><span class="si">}</span><span class="s2"> ...</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+                <span class="nb">input</span><span class="p">,</span> <span class="n">sr</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ifile</span><span class="p">)</span>
+                <span class="n">target</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">tfile</span><span class="p">)</span>
+
+                <span class="n">num_frames</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">([</span><span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]))</span>
+                <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">ifile</span><span class="p">),</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">tfile</span><span class="p">),</span> <span class="n">target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Found potentially corrupt file!&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">half</span><span class="p">:</span>
+                    <span class="nb">input</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">half</span><span class="p">()</span>
+                    <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">half</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">input</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># create one entry for each patch</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">file_examples</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="n">num_frames</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)):</span>
+                <span class="n">offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">file_examples</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;idx&quot;</span><span class="p">:</span> <span class="n">idx</span><span class="p">,</span> 
+                                           <span class="s2">&quot;target_file&quot;</span> <span class="p">:</span> <span class="n">tfile</span><span class="p">,</span>
+                                           <span class="s2">&quot;input_file&quot;</span> <span class="p">:</span> <span class="n">ifile</span><span class="p">,</span>
+                                           <span class="s2">&quot;input_audio&quot;</span> <span class="p">:</span> <span class="nb">input</span><span class="p">[:,</span><span class="n">offset</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="k">if</span> <span class="nb">input</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                                           <span class="s2">&quot;target_audio&quot;</span> <span class="p">:</span> <span class="n">target</span><span class="p">[:,</span><span class="n">offset</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="k">if</span> <span class="nb">input</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                                           <span class="s2">&quot;params&quot;</span> <span class="p">:</span> <span class="n">params</span><span class="p">,</span>
+                                           <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="n">offset</span><span class="p">,</span>
+                                           <span class="s2">&quot;frames&quot;</span> <span class="p">:</span> <span class="n">num_frames</span><span class="p">})</span>
+
+            <span class="c1"># add to overall file examples</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">examples</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_examples</span>
+        
+        <span class="c1"># use only a fraction of the subset data if applicable</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subset</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+            <span class="n">classes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">ex</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">])</span>
+            <span class="n">n_classes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">classes</span><span class="p">)</span> <span class="c1"># number of unique compressor configurations</span>
+            <span class="n">fraction_examples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction</span><span class="p">)</span>
+            <span class="n">n_examples_per_class</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fraction_examples</span> <span class="o">/</span> <span class="n">n_classes</span><span class="p">)</span>
+            <span class="n">n_min_total</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">*</span> <span class="n">n_examples_per_class</span> <span class="o">*</span> <span class="n">n_classes</span><span class="p">)</span> <span class="o">/</span> <span class="n">md</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span> 
+            <span class="n">n_min_per_class</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">*</span> <span class="n">n_examples_per_class</span><span class="p">)</span> <span class="o">/</span> <span class="n">md</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span> 
+            <span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">classes</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total Examples: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span><span class="si">}</span><span class="s2">     Total classes: </span><span class="si">{</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fraction examples: </span><span class="si">{</span><span class="n">fraction_examples</span><span class="si">}</span><span class="s2">    Examples/class: </span><span class="si">{</span><span class="n">n_examples_per_class</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Training with </span><span class="si">{</span><span class="n">n_min_per_class</span><span class="si">:</span><span class="s2">0.2f</span><span class="si">}</span><span class="s2"> min per class    Total of </span><span class="si">{</span><span class="n">n_min_total</span><span class="si">:</span><span class="s2">0.2f</span><span class="si">}</span><span class="s2"> min&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">n_examples_per_class</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span> 
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fraction `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction</span><span class="si">}</span><span class="s2">` set too low. No examples selected.&quot;</span><span class="p">)</span>
+
+            <span class="n">sampled_examples</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">config_class</span> <span class="ow">in</span> <span class="n">classes</span><span class="p">:</span> <span class="c1"># select N examples from each class</span>
+                <span class="n">class_examples</span> <span class="o">=</span> <span class="p">[</span><span class="n">ex</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span> <span class="k">if</span> <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">config_class</span><span class="p">]</span>
+                <span class="n">example_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">class_examples</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_examples_per_class</span><span class="p">)</span>
+                <span class="n">class_examples</span> <span class="o">=</span> <span class="p">[</span><span class="n">class_examples</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">example_indices</span><span class="p">]</span>
+                <span class="n">extra_factor</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction</span><span class="p">)</span>
+                <span class="n">sampled_examples</span> <span class="o">+=</span> <span class="n">class_examples</span> <span class="o">*</span> <span class="n">extra_factor</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">examples</span> <span class="o">=</span> <span class="n">sampled_examples</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">minutes</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">))</span> <span class="o">/</span> <span class="n">md</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span> 
+
+        <span class="c1"># we then want to get the input files</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Located </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span><span class="si">}</span><span class="s2"> examples totaling </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">minutes</span><span class="si">:</span><span class="s2">0.2f</span><span class="si">}</span><span class="s2"> min in the </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">subset</span><span class="si">}</span><span class="s2"> subset.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preload</span><span class="p">:</span>
+            <span class="n">audio_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;idx&quot;</span><span class="p">]</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;offset&quot;</span><span class="p">]</span>
+            <span class="nb">input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;input_audio&quot;</span><span class="p">]</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;target_audio&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;offset&quot;</span><span class="p">]</span> 
+            <span class="nb">input</span><span class="p">,</span> <span class="n">sr</span>  <span class="o">=</span> <span class="n">torchaudio</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;input_file&quot;</span><span class="p">],</span> 
+                                        <span class="n">num_frames</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> 
+                                        <span class="n">frame_offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> 
+                                        <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">target</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">torchaudio</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;target_file&quot;</span><span class="p">],</span> 
+                                        <span class="n">num_frames</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> 
+                                        <span class="n">frame_offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> 
+                                        <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">half</span><span class="p">:</span>
+                <span class="nb">input</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">half</span><span class="p">()</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">half</span><span class="p">()</span>
+
+        <span class="c1"># at random with p=0.5 flip the phase </span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="nb">input</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">target</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="c1"># then get the tuple of parameters</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;params&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">params</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">/=</span> <span class="mi">100</span>
+
+        <span class="k">return</span> <span class="nb">input</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_soundfile</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">always_2d</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">torchaudio</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">sr</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">Args</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>  <span class="c1"># stand-in for parseargs </span>
     <span class="n">model_type</span> <span class="o">=</span><span class="s1">&#39;tcn&#39;</span>
     <span class="n">root_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="n">preload</span> <span class="o">=</span> <span class="kc">False</span>
@@ -810,6 +1031,101 @@ Estimated Total Size (MB): 923.26
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Let's-make-sure-the-dls-is/are-working">Let's make sure the dls is/are working<a class="anchor-link" href="#Let's-make-sure-the-dls-is/are-working"> </a></h3>
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">inp</span><span class="p">,</span> <span class="n">targ</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
+<span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">params</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>(torch.Size([32, 1, 65536]),
+ torch.Size([32, 1, 65536]),
+ torch.Size([32, 1, 2]))</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If we want to avoid issues with the <code>.forward()</code>, we could modify the Dataloader so that it packs the params together with the inputs, and then the model's <code>.forward()</code> could un-pack them:</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">conc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">inp</span><span class="p">,</span> <span class="n">params</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">);</span> <span class="n">conc</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>torch.Size([32, 1, 65538])</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>....as long as we know how many parameters there are supposed to be.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Define-the-model">Define the model<a class="anchor-link" href="#Define-the-model"> </a></h3>
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">

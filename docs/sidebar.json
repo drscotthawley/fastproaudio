@@ -2,6 +2,6 @@
   "fastproaudio": {
     "Overview": "/",
     "fastproaudio core": "core.html",
-    "Demo&#58; End-to-End Time Domain Audio with fastai": "td_demo.html"
+    "Demo of End-to-End Time Domain Audio with fastai": "td_demo.html"
   }
 }
