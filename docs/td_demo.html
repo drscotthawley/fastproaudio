@@ -654,7 +654,9 @@ Note: you may need to restart the kernel to use updated packages.
         <span class="n">params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;params&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">params</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">/=</span> <span class="mi">100</span>
 
-        <span class="k">return</span> <span class="nb">input</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">params</span>
+        <span class="c1">#return input, target, params  # SHH Modification: We need to &quot;pack&quot; the inputs and params together for fastai</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="nb">input</span><span class="p">,</span><span class="n">params</span><span class="p">),</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="n">target</span>
+    
 
     <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_soundfile</span><span class="p">:</span>
@@ -666,6 +668,28 @@ Note: you may need to restart the kernel to use updated packages.
 </pre></div>
 
     </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>Exception ignored in: &lt;function _MultiProcessingDataLoaderIter.__del__ at 0x7fc389342790&gt;
+Traceback (most recent call last):
+  File &#34;/home/shawley/envs/fastai/lib/python3.9/site-packages/torch/utils/data/dataloader.py&#34;, line 1328, in __del__
+  File &#34;/home/shawley/envs/fastai/lib/python3.9/site-packages/torch/utils/data/dataloader.py&#34;, line 1301, in _shutdown_workers
+  File &#34;/usr/lib/python3.9/multiprocessing/process.py&#34;, line 149, in join
+  File &#34;/usr/lib/python3.9/multiprocessing/popen_fork.py&#34;, line 40, in wait
+  File &#34;/usr/lib/python3.9/multiprocessing/connection.py&#34;, line 936, in wait
+  File &#34;/usr/lib/python3.9/selectors.py&#34;, line 416, in select
+KeyboardInterrupt: 
+</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -764,8 +788,209 @@ Located 45 examples totaling 2.23 min in the val subset.
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">microtcn.tcn_bare</span> <span class="kn">import</span> <span class="n">TCNModel</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">microtcn.tcn_bare</span> <span class="kn">import</span> <span class="n">TCNModel</span> <span class="k">as</span> <span class="n">TCNModel_orig</span>
 <span class="c1">#from microtcn.lstm import LSTMModel # actually the LSTM depends on a lot of Lightning stuff, so we&#39;ll skip that</span>
+
+
+<span class="c1"># Ok, because of fastai stuff we&#39;re going to have to &quot;pack-and-unpack&quot; the params </span>
+<span class="c1"># between the DataLoader and the Model. </span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="k">def</span> <span class="nf">center_crop</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">shape</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span>
+    <span class="n">stop</span>  <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">shape</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">FiLM</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">num_features</span><span class="p">,</span> 
+                 <span class="n">cond_dim</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FiLM</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_features</span> <span class="o">=</span> <span class="n">num_features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">num_features</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adaptor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">cond_dim</span><span class="p">,</span> <span class="n">num_features</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">cond</span><span class="p">):</span>
+
+        <span class="n">cond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaptor</span><span class="p">(</span><span class="n">cond</span><span class="p">)</span>
+        <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="n">cond</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>      <span class="c1"># apply BatchNorm without affine</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">g</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span>     <span class="c1"># then apply conditional affine</span>
+
+        <span class="k">return</span> <span class="n">x</span>
+
+<span class="k">class</span> <span class="nc">TCNBlock</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                <span class="n">in_ch</span><span class="p">,</span> 
+                <span class="n">out_ch</span><span class="p">,</span> 
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> 
+                <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+                <span class="n">dilation</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+                <span class="n">grouped</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                <span class="n">conditional</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TCNBlock</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_ch</span> <span class="o">=</span> <span class="n">in_ch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_ch</span> <span class="o">=</span> <span class="n">out_ch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">=</span> <span class="n">kernel_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">=</span> <span class="n">padding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dilation</span> <span class="o">=</span> <span class="n">dilation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grouped</span> <span class="o">=</span> <span class="n">grouped</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conditional</span> <span class="o">=</span> <span class="n">conditional</span>
+
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">out_ch</span> <span class="k">if</span> <span class="n">grouped</span> <span class="ow">and</span> <span class="p">(</span><span class="n">in_ch</span> <span class="o">%</span> <span class="n">out_ch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span><span class="n">in_ch</span><span class="p">,</span> 
+                                     <span class="n">out_ch</span><span class="p">,</span> 
+                                     <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> 
+                                     <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span> 
+                                     <span class="n">dilation</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span>
+                                     <span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">,</span>
+                                     <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1">#if grouped:</span>
+        <span class="c1">#    self.conv1b = torch.nn.Conv1d(out_ch, out_ch, kernel_size=1)</span>
+
+        <span class="k">if</span> <span class="n">conditional</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">film</span> <span class="o">=</span> <span class="n">FiLM</span><span class="p">(</span><span class="n">out_ch</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">out_ch</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">PReLU</span><span class="p">(</span><span class="n">out_ch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span><span class="n">in_ch</span><span class="p">,</span> 
+                                   <span class="n">out_ch</span><span class="p">,</span> 
+                                   <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                   <span class="n">groups</span><span class="o">=</span><span class="n">in_ch</span><span class="p">,</span>
+                                   <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">x_in</span> <span class="o">=</span> <span class="n">x</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1">#if self.grouped: # apply pointwise conv</span>
+        <span class="c1">#    x = self.conv1b(x)</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>   <span class="c1"># apply FiLM conditioning</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">film</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">(</span><span class="n">x_in</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">center_crop</span><span class="p">(</span><span class="n">x_res</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">x</span>
+
+<span class="k">class</span> <span class="nc">TCNModel</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Temporal convolutional network with conditioning module.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            nparams (int): Number of conditioning parameters.</span>
+<span class="sd">            ninputs (int): Number of input channels (mono = 1, stereo 2). Default: 1</span>
+<span class="sd">            noutputs (int): Number of output channels (mono = 1, stereo 2). Default: 1</span>
+<span class="sd">            nblocks (int): Number of total TCN blocks. Default: 10</span>
+<span class="sd">            kernel_size (int): Width of the convolutional kernels. Default: 3</span>
+<span class="sd">            dialation_growth (int): Compute the dilation factor at each block as dilation_growth ** (n % stack_size). Default: 1</span>
+<span class="sd">            channel_growth (int): Compute the output channels at each black as in_ch * channel_growth. Default: 2</span>
+<span class="sd">            channel_width (int): When channel_growth = 1 all blocks use convolutions with this many channels. Default: 64</span>
+<span class="sd">            stack_size (int): Number of blocks that constitute a single stack of blocks. Default: 10</span>
+<span class="sd">            grouped (bool): Use grouped convolutions to reduce the total number of parameters. Default: False</span>
+<span class="sd">            num_examples (int): Number of evaluation audio examples to log after each epochs. Default: 4</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">nparams</span><span class="p">,</span>
+                 <span class="n">ninputs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">noutputs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">nblocks</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> 
+                 <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> 
+                 <span class="n">dilation_growth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+                 <span class="n">channel_growth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+                 <span class="n">channel_width</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> 
+                 <span class="n">stack_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                 <span class="n">grouped</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">num_examples</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                 <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TCNModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nparams</span><span class="o">=</span><span class="n">nparams</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ninputs</span><span class="o">=</span><span class="n">ninputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noutputs</span><span class="o">=</span><span class="n">noutputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nblocks</span><span class="o">=</span><span class="n">nblocks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dilation_growth</span><span class="o">=</span><span class="n">dilation_growth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_growth</span><span class="o">=</span><span class="n">channel_growth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_width</span><span class="o">=</span><span class="n">channel_width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack_size</span><span class="o">=</span><span class="n">stack_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grouped</span><span class="o">=</span><span class="n">grouped</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_examples</span><span class="o">=</span><span class="n">num_examples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span>
+
+        <span class="c1"># setup loss functions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span>      <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">L1Loss</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nparams</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">nparams</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nblocks</span><span class="p">):</span>
+            <span class="n">in_ch</span> <span class="o">=</span> <span class="n">out_ch</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">ninputs</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_growth</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">out_ch</span> <span class="o">=</span> <span class="n">in_ch</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_growth</span> 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">out_ch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_width</span>
+
+            <span class="n">dilation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dilation_growth</span> <span class="o">**</span> <span class="p">(</span><span class="n">n</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack_size</span><span class="p">)</span>
+            <span class="c1">#dilation = dilation_growth</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TCNBlock</span><span class="p">(</span><span class="n">in_ch</span><span class="p">,</span> 
+                                        <span class="n">out_ch</span><span class="p">,</span> 
+                                        <span class="n">kernel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> 
+                                        <span class="n">dilation</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span>
+                                        <span class="n">grouped</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grouped</span><span class="p">,</span>
+                                        <span class="n">conditional</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nparams</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">False</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span><span class="n">out_ch</span><span class="p">,</span> <span class="n">noutputs</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nparams</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># unpack the params </span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">nparams</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,:,</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">nparams</span><span class="p">:]</span>
+        <span class="c1"># if parameters present, </span>
+        <span class="c1"># compute global conditioning</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cond</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># iterate over blocks passing conditioning</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">cond</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">skips</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">skips</span> <span class="o">=</span> <span class="n">center_crop</span><span class="p">(</span><span class="n">skips</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">skips</span> <span class="o">=</span> <span class="n">skips</span> <span class="o">+</span> <span class="n">x</span>
+
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">skips</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">compute_receptive_field</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Compute the receptive field in samples.&quot;&quot;&quot;</span>
+        <span class="n">rf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nblocks</span><span class="p">):</span>
+            <span class="n">dilation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dilation_growth</span> <span class="o">**</span> <span class="p">(</span><span class="n">n</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack_size</span><span class="p">)</span>
+            <span class="n">rf</span> <span class="o">=</span> <span class="n">rf</span> <span class="o">+</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dilation</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rf</span>
 </pre></div>
 
     </div>
@@ -823,7 +1048,7 @@ Located 45 examples totaling 2.23 min in the val subset.
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">torchsummary</span> 
-<span class="n">torchsummary</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">65536</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)],</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<span class="n">torchsummary</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">65536</span><span class="o">+</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">])],</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -921,10 +1146,10 @@ Total params: 162,161
 Trainable params: 162,161
 Non-trainable params: 0
 ----------------------------------------------------------------
-Input size (MB): 0.50
+Input size (MB): 0.25
 Forward/backward pass size (MB): 922.14
 Params size (MB): 0.62
-Estimated Total Size (MB): 923.26
+Estimated Total Size (MB): 923.01
 ----------------------------------------------------------------
 </pre>
 </div>
@@ -936,16 +1161,6 @@ Estimated Total Size (MB): 923.26
 </div>
     {% endraw %}
 
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>The tricky part of this model, as far as fastai goes, is that it doesn't just take one input. The <code>TCNModel</code>'s <code>.forward()</code> definition reads</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</pre></div>
-<p>The fact that <code>p</code> is allowed to be undefined is perhaps helpful for getting started, but it <em>is</em> where our parameters are going to go, so we'll need that eventually.  fastai doesn't usually accomodate multiple inputs easily.  Hmmmm.</p>
-
-</div>
-</div>
-</div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Getting-the-model-into-fastai-form">Getting the model into fastai form<a class="anchor-link" href="#Getting-the-model-into-fastai-form"> </a></h3>
@@ -1044,7 +1259,8 @@ Estimated Total Size (MB): 923.26
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">inp</span><span class="p">,</span> <span class="n">targ</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">inp</span><span class="p">,</span> <span class="n">targ</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
+<span class="n">inp</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]],</span> <span class="n">inp</span><span class="p">[:,:,</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]:]</span>
 <span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">params</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
 </pre></div>
 
@@ -1073,53 +1289,6 @@ Estimated Total Size (MB): 923.26
 </div>
     {% endraw %}
 
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>If we want to avoid issues with the <code>.forward()</code>, we could modify the Dataloader so that it packs the params together with the inputs, and then the model's <code>.forward()</code> could un-pack them:</p>
-
-</div>
-</div>
-</div>
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">conc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">inp</span><span class="p">,</span> <span class="n">params</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">);</span> <span class="n">conc</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>torch.Size([32, 1, 65538])</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>....as long as we know how many parameters there are supposed to be.</p>
-
-</div>
-</div>
-</div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Define-the-model">Define the model<a class="anchor-link" href="#Define-the-model"> </a></h3>
@@ -1319,12 +1488,12 @@ Estimated Total Size (MB): 923.26
 <span class="ansi-green-intense-fg ansi-bold">   1052</span>         <span class="ansi-red-fg"># Do not call functions when jit is used</span>
 <span class="ansi-green-intense-fg ansi-bold">   1053</span>         full_backward_hooks<span class="ansi-blue-fg">,</span> non_full_backward_hooks <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">]</span>
 
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/microtcn/tcn_bare.py</span> in <span class="ansi-cyan-fg">forward</span><span class="ansi-blue-fg">(self, x, p)</span>
-<span class="ansi-green-intense-fg ansi-bold">    170</span>         <span class="ansi-red-fg"># compute global conditioning</span>
-<span class="ansi-green-intense-fg ansi-bold">    171</span>         <span class="ansi-green-fg">if</span> p <span class="ansi-green-fg">is</span> <span class="ansi-green-fg">not</span> <span class="ansi-green-fg">None</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 172</span><span class="ansi-red-fg">             </span>cond <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>gen<span class="ansi-blue-fg">(</span>p<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    173</span>         <span class="ansi-green-fg">else</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">    174</span>             cond <span class="ansi-blue-fg">=</span> <span class="ansi-green-fg">None</span>
+<span class="ansi-green-fg">/tmp/ipykernel_756174/3492921091.py</span> in <span class="ansi-cyan-fg">forward</span><span class="ansi-blue-fg">(self, x)</span>
+<span class="ansi-green-intense-fg ansi-bold">    186</span>         <span class="ansi-red-fg"># iterate over blocks passing conditioning</span>
+<span class="ansi-green-intense-fg ansi-bold">    187</span>         <span class="ansi-green-fg">for</span> idx<span class="ansi-blue-fg">,</span> block <span class="ansi-green-fg">in</span> enumerate<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>blocks<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-fg">--&gt; 188</span><span class="ansi-red-fg">             </span>x <span class="ansi-blue-fg">=</span> block<span class="ansi-blue-fg">(</span>x<span class="ansi-blue-fg">,</span> cond<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    189</span>             <span class="ansi-green-fg">if</span> idx <span class="ansi-blue-fg">==</span> <span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">    190</span>                 skips <span class="ansi-blue-fg">=</span> x
 
 <span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/torch/nn/modules/module.py</span> in <span class="ansi-cyan-fg">_call_impl</span><span class="ansi-blue-fg">(self, *input, **kwargs)</span>
 <span class="ansi-green-intense-fg ansi-bold">   1049</span>         if not (self._backward_hooks or self._forward_hooks or self._forward_pre_hooks or _global_backward_hooks
@@ -1333,35 +1502,14 @@ Estimated Total Size (MB): 923.26
 <span class="ansi-green-intense-fg ansi-bold">   1052</span>         <span class="ansi-red-fg"># Do not call functions when jit is used</span>
 <span class="ansi-green-intense-fg ansi-bold">   1053</span>         full_backward_hooks<span class="ansi-blue-fg">,</span> non_full_backward_hooks <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">]</span>
 
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/torch/nn/modules/container.py</span> in <span class="ansi-cyan-fg">forward</span><span class="ansi-blue-fg">(self, input)</span>
-<span class="ansi-green-intense-fg ansi-bold">    137</span>     <span class="ansi-green-fg">def</span> forward<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> input<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">    138</span>         <span class="ansi-green-fg">for</span> module <span class="ansi-green-fg">in</span> self<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 139</span><span class="ansi-red-fg">             </span>input <span class="ansi-blue-fg">=</span> module<span class="ansi-blue-fg">(</span>input<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    140</span>         <span class="ansi-green-fg">return</span> input
-<span class="ansi-green-intense-fg ansi-bold">    141</span> 
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/torch/nn/modules/module.py</span> in <span class="ansi-cyan-fg">_call_impl</span><span class="ansi-blue-fg">(self, *input, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">   1049</span>         if not (self._backward_hooks or self._forward_hooks or self._forward_pre_hooks or _global_backward_hooks
-<span class="ansi-green-intense-fg ansi-bold">   1050</span>                 or _global_forward_hooks or _global_forward_pre_hooks):
-<span class="ansi-green-fg">-&gt; 1051</span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">return</span> forward_call<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">*</span>input<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">   1052</span>         <span class="ansi-red-fg"># Do not call functions when jit is used</span>
-<span class="ansi-green-intense-fg ansi-bold">   1053</span>         full_backward_hooks<span class="ansi-blue-fg">,</span> non_full_backward_hooks <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">]</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/torch/nn/modules/linear.py</span> in <span class="ansi-cyan-fg">forward</span><span class="ansi-blue-fg">(self, input)</span>
+<span class="ansi-green-fg">/tmp/ipykernel_756174/3492921091.py</span> in <span class="ansi-cyan-fg">forward</span><span class="ansi-blue-fg">(self, x, p)</span>
+<span class="ansi-green-intense-fg ansi-bold">     91</span> 
+<span class="ansi-green-intense-fg ansi-bold">     92</span>         x_res <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>res<span class="ansi-blue-fg">(</span>x_in<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">---&gt; 93</span><span class="ansi-red-fg">         </span>x <span class="ansi-blue-fg">=</span> x <span class="ansi-blue-fg">+</span> center_crop<span class="ansi-blue-fg">(</span>x_res<span class="ansi-blue-fg">,</span> x<span class="ansi-blue-fg">.</span>size<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">-</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
 <span class="ansi-green-intense-fg ansi-bold">     94</span> 
-<span class="ansi-green-intense-fg ansi-bold">     95</span>     <span class="ansi-green-fg">def</span> forward<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> input<span class="ansi-blue-fg">:</span> Tensor<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">-&gt;</span> Tensor<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">---&gt; 96</span><span class="ansi-red-fg">         </span><span class="ansi-green-fg">return</span> F<span class="ansi-blue-fg">.</span>linear<span class="ansi-blue-fg">(</span>input<span class="ansi-blue-fg">,</span> self<span class="ansi-blue-fg">.</span>weight<span class="ansi-blue-fg">,</span> self<span class="ansi-blue-fg">.</span>bias<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     97</span> 
-<span class="ansi-green-intense-fg ansi-bold">     98</span>     <span class="ansi-green-fg">def</span> extra_repr<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">-&gt;</span> str<span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">     95</span>         <span class="ansi-green-fg">return</span> x
 
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/torch/nn/functional.py</span> in <span class="ansi-cyan-fg">linear</span><span class="ansi-blue-fg">(input, weight, bias)</span>
-<span class="ansi-green-intense-fg ansi-bold">   1845</span>     <span class="ansi-green-fg">if</span> has_torch_function_variadic<span class="ansi-blue-fg">(</span>input<span class="ansi-blue-fg">,</span> weight<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">   1846</span>         <span class="ansi-green-fg">return</span> handle_torch_function<span class="ansi-blue-fg">(</span>linear<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">(</span>input<span class="ansi-blue-fg">,</span> weight<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span> input<span class="ansi-blue-fg">,</span> weight<span class="ansi-blue-fg">,</span> bias<span class="ansi-blue-fg">=</span>bias<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-fg">-&gt; 1847</span><span class="ansi-red-fg">     </span><span class="ansi-green-fg">return</span> torch<span class="ansi-blue-fg">.</span>_C<span class="ansi-blue-fg">.</span>_nn<span class="ansi-blue-fg">.</span>linear<span class="ansi-blue-fg">(</span>input<span class="ansi-blue-fg">,</span> weight<span class="ansi-blue-fg">,</span> bias<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">   1848</span> 
-<span class="ansi-green-intense-fg ansi-bold">   1849</span> 
-
-<span class="ansi-red-fg">RuntimeError</span>: mat1 and mat2 shapes cannot be multiplied (32x65536 and 2x16)</pre>
+<span class="ansi-red-fg">RuntimeError</span>: CUDA out of memory. Tried to allocate 254.00 MiB (GPU 0; 7.80 GiB total capacity; 6.52 GiB already allocated; 190.56 MiB free; 6.55 GiB reserved in total by PyTorch)</pre>
 </div>
 </div>
 
