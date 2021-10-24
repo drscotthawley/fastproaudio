@@ -78,7 +78,7 @@ There are many tutorials on doing audio classification.  There are as many doing
 <span class="o">%</span><span class="k">pip</span> install -Uq fastai_minima torchsummary pyzenodo3 wandb
 
 <span class="c1"># Steinmetz&#39; micro-tcn and auraloss packages</span>
-<span class="o">%</span><span class="k">pip</span> install -q wheel git+https://github.com/csteinmetz1/micro-tcn.git  git+https://github.com/csteinmetz1/auraloss
+<span class="o">%</span><span class="k">pip</span> install -q wheel --ignore-requires-python git+https://github.com/csteinmetz1/micro-tcn.git  git+https://github.com/csteinmetz1/auraloss
 
 <span class="c1"># After all these, restart the kernel and continue below</span>
 </pre></div>
@@ -1082,6 +1082,22 @@ pred   = torch.Size([8, 1, 51214])
 >
 </div>
 
+</div>
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>wandb: ERROR Dropped streaming file chunk (see wandb/debug-internal.log)
+ERROR:root:dropped chunk 404 Client Error: Not Found for url: https://api.wandb.ai/files/drscotthawley/micro-tcn-fastai/1tv24zab/file_stream
+NoneType: None
+wandb: ERROR Dropped streaming file chunk (see wandb/debug-internal.log)
+ERROR:root:dropped chunk 404 Client Error: Not Found for url: https://api.wandb.ai/files/drscotthawley/micro-tcn-fastai/1tv24zab/file_stream
+NoneType: None
+wandb: ERROR Dropped streaming file chunk (see wandb/debug-internal.log)
+ERROR:root:dropped chunk 404 Client Error: Not Found for url: https://api.wandb.ai/files/drscotthawley/micro-tcn-fastai/1tv24zab/file_stream
+NoneType: None
+</pre>
+</div>
 </div>
 
 </div>
