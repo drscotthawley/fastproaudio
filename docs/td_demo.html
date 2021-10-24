@@ -6,8 +6,8 @@ title: Demo of End-to-End Time Domain Audio with fastai
 keywords: fastai
 sidebar: home_sidebar
 
-
-
+summary: "Note: some parts of this document are not rendered. Click the "Open in Colab" badge to see everything."
+description: "Note: some parts of this document are not rendered. Click the "Open in Colab" badge to see everything."
 nb_path: "01_td_demo.ipynb"
 ---
 <!--
@@ -31,24 +31,16 @@ nb_path: "01_td_demo.ipynb"
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>fastaudio focuses on spectrograms. <code>fastai</code> use cases tend to focus on classification. We need to go beyond those. Instead we'll focus on two things:</p>
-<ol>
-<li><p>autoregressive prediction in the time domain. We'll use an LSTM -- essentially adapting the language model lessons</p>
-</li>
-<li><p>audio-to-audio processing/translation (e.g. audio effects). We'll use stacked 1D convolutions like a U-Net</p>
-</li>
-</ol>
-<p>(you probably noticed already that task #1 could be in task #2, for the case of translating to audio shifted ahead by one sample.)</p>
-<h4 id="&quot;How-many-channels-of-audio-are-we-going-to-use?&quot;">"How many channels of audio are we going to use?"<a class="anchor-link" href="#&quot;How-many-channels-of-audio-are-we-going-to-use?&quot;"> </a></h4><p>That's up to the dataset!  We'll try our best to assume that it's just mono.</p>
-<h4 id="&quot;What-other-fastai-datatypes/projects-are-relevant?&quot;">"What other fastai datatypes/projects are relevant?"<a class="anchor-link" href="#&quot;What-other-fastai-datatypes/projects-are-relevant?&quot;"> </a></h4><p>There are three packages that are relevant for sequence modeling:</p>
-<ol>
-<li><p><code>fastaudio</code>, as we mentioned, is only for spectrogram classification. The <code>AudioBlock</code> makes batches using an entire audio file which then gets converted to spectrograms.  Instead, we want to progressively grab sequences of audio samples and as (uniform-length) chunks.</p>
-</li>
-<li><p>The <a href="https://timeseriesai.github.io/tsai/">Time Series Prediction</a> package is relevant, but the only time series output it seems to support is <a href="https://timeseriesai.github.io/tsai/#Univariate-Forecasting">"univariate forecasting"</a>.  Nope.</p>
-</li>
-<li>Language Modeling, e.g. Chapters <a href="https://github.com/fastai/fastbook/blob/master/10_nlp.ipynb">10</a> and <a href="https://github.com/fastai/fastbook/blob/master/12_nlp_dive.ipynb">12</a> from fastbook. Yea, that's the closest. We can treat the audio samples as if they were word vectors/embeddings: just make the tokenizer and numericalize methods to be no-ops (or we could use mu-law encoding).  Nice thing is the dimensionality of the embeddings is just equal to how many channels of audio you have. </li>
-</ol>
-<p>We'll use <em>some</em> of fastaudio but we'll also liberally rewrite/overwrite whatever we want. We'll start with their imports..</p>
+<p>There are many tutorials on doing audio classification.  There are as many doing audio processing or generation but <a href="https://twitter.com/drscotthawley/status/1451968159565680648?s=20">there's been a growing list</a>.  Lately I've become more proficient with fastai and would like to port some audio processing examples over to it.  There are a few choices for tasks and datasets -- great work on source separation, for example.</p>
+<h2 id="My-Choice:-Reproduce-Micro-TCN">My Choice: Reproduce Micro-TCN<a class="anchor-link" href="#My-Choice:-Reproduce-Micro-TCN"> </a></h2><p>But since I've been interested in audio effects, I'll choose the task of reproducing Christian Steinmetz's <a href="https://github.com/csteinmetz1/micro-tcn">Micro-TCN</a> work for learning to profile audio compressors. And rather than use the full 20 GB <a href="(https://zenodo.org/record/3824876">SignalTrain LA2A dataset</a> that he and I have used in the past, we'll use a 200MB "Reduced" subset I made yesterday. It's only the first 10 seconds of each 20-minute audio file, but it's enough for a reasonably-quick demo.</p>
+<h3 id="Other-things-we-could-try-(in-a-later-notebook)">Other things we could try (in a later notebook)<a class="anchor-link" href="#Other-things-we-could-try-(in-a-later-notebook)"> </a></h3><p>We could just grab any old audio data and then we could learn some kind of inverse effect such as denoising: we could add noise to the audio files and then train the network to remove the noise.  But what other audio datasets are available?</p>
+<ul>
+<li><a href="https://pytorch.org/audio/stable/datasets.html">torchaudio datasets</a>. These are almost all about speech; only GTZAN is musical.  </li>
+<li><a href="https://source-separation.github.io/tutorial/data/datasets.html">Source separation datasets</a>, i.e. mono-to-many</li>
+<li><a href="https://ismir.net/resources/datasets/">ISMIR has a list of datasets</a></li>
+<li>We can always grab audio and then use Spotify's new <a href="https://github.com/spotify/pedalboard">Pedalboard</a> to add effects</li>
+<li><a href="https://zenodo.org/record/3562442">Marco Martinez' Leslie effects dataset</a> is a bit less than 1 GB. It has "dry" (input) and various target output directories such as "tremelo".</li>
+</ul>
 
 </div>
 </div>
@@ -77,10 +69,16 @@ nb_path: "01_td_demo.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#%pip install -Uq pip fastai fastai_minima wheel torchsummary pyzenodo3 wandb</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># If on Colab, uncomment &amp; run the next line, then restart</span>
+<span class="o">!</span> <span class="o">[</span> -e /content <span class="o">]</span> <span class="o">&amp;&amp;</span> pip install -Uqq pip fastai git+https://github.com/drscotthawley/fastproaudio.git
 
-<span class="c1"># Installing from GitHub can take a little while BTW...</span>
-<span class="c1">#%pip install -q wheel git+https://github.com/csteinmetz1/micro-tcn.git  git+https://github.com/csteinmetz1/auraloss</span>
+<span class="c1"># Additional installs for this tutorial</span>
+<span class="o">%</span><span class="k">pip</span> install -Uq fastai_minima torchsummary pyzenodo3 wandb
+
+<span class="c1"># Steinmetz&#39; micro-tcn and auraloss packages</span>
+<span class="o">%</span><span class="k">pip</span> install -q wheel git+https://github.com/csteinmetz1/micro-tcn.git  git+https://github.com/csteinmetz1/auraloss
+
+<span class="c1"># After all these, restart the kernel and continue below</span>
 </pre></div>
 
     </div>
@@ -129,47 +127,6 @@ nb_path: "01_td_demo.ipynb"
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Possible-Datasets-and-Tasks">Possible Datasets and Tasks<a class="anchor-link" href="#Possible-Datasets-and-Tasks"> </a></h2><p>As for data, we just use the fastaudio "speakers" dataset for now:</p>
-
-</div>
-</div>
-</div>
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#path = untar_data(URLs.SPEAKERS10)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>....and then we could learn some kind of inverse effect such as denoising: we could add noise to the audio files and then train the network to remove the noise.</p>
-<p>But what other audio datasets are available?</p>
-<ul>
-<li><a href="https://pytorch.org/audio/stable/datasets.html">torchaudio datasets</a>. These are almost all about speech; only GTZAN is musical.  </li>
-<li>I've got the <a href="https://zenodo.org/record/3824876">SignalTrain audio dataset for compressors</a> although it's 20 GB. </li>
-<li><a href="https://source-separation.github.io/tutorial/data/datasets.html">Source separation datasets</a>, i.e. mono-to-many</li>
-<li><a href="https://ismir.net/resources/datasets/">ISMIR has a list of datasets</a></li>
-<li>We can always grab audio and then use Spotify's new <a href="https://github.com/spotify/pedalboard">Pedalboard</a> to add effects</li>
-<li><a href="https://zenodo.org/record/3562442">Marco Martinez' Leslie effects dataset</a> is a bit less than 1 GB. It has "dry" (input) and "tremelo" (target) directories.</li>
-</ul>
-<h2 id="My-Choice:-Reproduce-Micro-TCN">My Choice: Reproduce Micro-TCN<a class="anchor-link" href="#My-Choice:-Reproduce-Micro-TCN"> </a></h2><p>I'll choose the task of reproducing Christian Steinmetz's <a href="https://github.com/csteinmetz1/micro-tcn">Micro-TCN</a> work for learning audio compressors. And rather than use the full 20 GB SignalTrain dataset, let's use the 200MB "Reduced" dataset I just made. It's only the first 10 seconds of each 20-minute audio file, but it's enough for a reasonably-quick demo.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Download-and-Inspect-the-Data">Download and Inspect the Data<a class="anchor-link" href="#Download-and-Inspect-the-Data"> </a></h3>
 </div>
 </div>
@@ -210,8 +167,7 @@ nb_path: "01_td_demo.ipynb"
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Steinmetz uses PyTorch Lightning instead of fastai.  We should be able to do the bare minimum integration by following <a href="https://muellerzr.github.io/fastblog/2021/02/14/Pytorchtofastai.html">Zach Mueller's prescription</a>.</p>
-<p>First let's take a look:</p>
-
+<h3 id="First-let's-take-a-look-at-some-data">First let's take a look at some data<a class="anchor-link" href="#First-let's-take-a-look-at-some-data"> </a></h3>
 </div>
 </div>
 </div>
@@ -527,9 +483,9 @@ Max:  0.144,  Min: -0.159, Mean: -0.000, Std Dev:  0.018
     <span class="n">train_length</span> <span class="o">=</span> <span class="mi">65536</span>
     <span class="n">train_fraction</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">eval_length</span> <span class="o">=</span> <span class="mi">131072</span>
-    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">8</span>   <span class="c1"># original is 32, my laptop needs smaller</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">8</span>   <span class="c1"># original is 32, my laptop needs smaller, esp. w/o half precision</span>
     <span class="n">num_workers</span> <span class="o">=</span> <span class="mi">4</span>
-    <span class="n">precision</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">precision</span> <span class="o">=</span> <span class="mi">32</span>  <span class="c1"># LEAVE AS 32 FOR NOW: HALF PRECISION (16) NOT WORKING YET -SHH</span>
     <span class="n">n_params</span> <span class="o">=</span> <span class="mi">2</span>
     
 <span class="n">args</span> <span class="o">=</span> <span class="n">Args</span><span class="p">()</span>
