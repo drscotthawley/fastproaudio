@@ -517,7 +517,7 @@ Note: you may need to restart the kernel to use updated packages.
     <span class="n">train_length</span> <span class="o">=</span> <span class="mi">65536</span>
     <span class="n">train_fraction</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">eval_length</span> <span class="o">=</span> <span class="mi">131072</span>
-    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">16</span>   <span class="c1"># original is 32, my laptop needs smaller</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">8</span>   <span class="c1"># original is 32, my laptop needs smaller</span>
     <span class="n">num_workers</span> <span class="o">=</span> <span class="mi">8</span>
     <span class="n">precision</span> <span class="o">=</span> <span class="mi">32</span>
     <span class="n">n_params</span> <span class="o">=</span> <span class="mi">2</span>
@@ -597,9 +597,13 @@ Located 45 examples totaling 2.23 min in the val subset.
 <span class="k">class</span> <span class="nc">TCNModel_fastai</span><span class="p">(</span><span class="n">TCNModel</span><span class="p">):</span>
     <span class="s2">&quot;For fastai&#39;s sake, unpack the inputs and params&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1">#print(&quot;args = &quot;,args,&quot;, kwargs =&quot;,kwargs)</span>
+        <span class="c1">#self.nparams = kwargs[&#39;nparams&#39;]</span>
+        <span class="c1">#print(&quot;self.nparams = &quot;,self.nparams)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1">#print(&quot;self.nparams = &quot;,self.nparams)  # just checking to make sure it&#39;s set</span>
         <span class="n">p</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nparams</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># unpack the params </span>
             <span class="n">x</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">nparams</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,:,</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">nparams</span><span class="p">:]</span>
@@ -674,7 +678,8 @@ Located 45 examples totaling 2.23 min in the val subset.
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>----------------------------------------------------------------
+<pre>self.nparams =  2
+----------------------------------------------------------------
         Layer (type)               Output Shape         Param #
 ================================================================
             Linear-1                [-1, 1, 16]              48
@@ -888,7 +893,7 @@ Estimated Total Size (MB): 923.01
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>torch.Size([16, 1, 65536]) torch.Size([16, 1, 65536]) torch.Size([16, 1, 2])
+<pre>torch.Size([8, 1, 65536]) torch.Size([8, 1, 65536]) torch.Size([8, 1, 2])
 </pre>
 </div>
 </div>
@@ -912,7 +917,7 @@ Estimated Total Size (MB): 923.01
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">learn</span> <span class="o">=</span> <span class="n">Learner</span><span class="p">(</span><span class="n">dls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="n">mse</span><span class="p">],</span> <span class="n">loss_func</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">L1Loss</span><span class="p">,</span> <span class="n">opt_func</span><span class="o">=</span><span class="n">opt_func</span><span class="p">,</span> <span class="n">cbs</span><span class="o">=</span><span class="p">[</span><span class="n">CudaCallback</span><span class="p">()])</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">learn</span> <span class="o">=</span> <span class="n">Learner</span><span class="p">(</span><span class="n">dls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="n">mse</span><span class="p">],</span> <span class="n">loss_func</span><span class="o">=</span><span class="n">L1LossFlat</span><span class="p">,</span> <span class="n">opt_func</span><span class="o">=</span><span class="n">opt_func</span><span class="p">,</span> <span class="n">cbs</span><span class="o">=</span><span class="p">[</span><span class="n">CudaCallback</span><span class="p">()])</span>
 </pre></div>
 
     </div>
@@ -1025,8 +1030,8 @@ Estimated Total Size (MB): 923.01
                 background: #F44336;
             }
         </style>
-      <progress value='0' class='' max='24' style='width:300px; height:20px; vertical-align: middle;'></progress>
-      0.00% [0/24 00:00<00:00]
+      <progress value='0' class='' max='48' style='width:300px; height:20px; vertical-align: middle;'></progress>
+      0.00% [0/48 00:00<00:00]
     </div>
     
 </div>
@@ -1035,11 +1040,19 @@ Estimated Total Size (MB): 923.01
 
 <div class="output_area">
 
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>self.nparams =  2
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+
 <div class="output_subarea output_text output_error">
 <pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">RuntimeError</span>                              Traceback (most recent call last)
-<span class="ansi-green-fg">/tmp/ipykernel_764832/3420901087.py</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-fg">/tmp/ipykernel_765480/3420901087.py</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
 <span class="ansi-green-fg">----&gt; 1</span><span class="ansi-red-fg"> </span>learn<span class="ansi-blue-fg">.</span>fit<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">2</span><span class="ansi-blue-fg">,</span> lr<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">0.001</span><span class="ansi-blue-fg">)</span>
 
 <span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">fit</span><span class="ansi-blue-fg">(self, n_epoch, lr, wd, cbs, reset_opt)</span>
@@ -1118,6 +1131,20 @@ Estimated Total Size (MB): 923.01
 <span class="ansi-green-fg">--&gt; 240</span><span class="ansi-red-fg">             </span>self<span class="ansi-blue-fg">.</span>loss_grad <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>loss_func<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>pred<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">*</span>self<span class="ansi-blue-fg">.</span>yb<span class="ansi-blue-fg">)</span>
 <span class="ansi-green-intense-fg ansi-bold">    241</span>             self<span class="ansi-blue-fg">.</span>loss <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>loss_grad<span class="ansi-blue-fg">.</span>clone<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
 <span class="ansi-green-intense-fg ansi-bold">    242</span>         self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">&#39;after_loss&#39;</span><span class="ansi-blue-fg">)</span>
+
+<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai/losses.py</span> in <span class="ansi-cyan-fg">L1LossFlat</span><span class="ansi-blue-fg">(axis, floatify, *args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">     98</span> <span class="ansi-green-fg">def</span> L1LossFlat<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">*</span>args<span class="ansi-blue-fg">,</span> axis<span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">-</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span> floatify<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">True</span><span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">     99</span>     <span class="ansi-blue-fg">&#34;Same as `nn.L1Loss`, but flattens input and target.&#34;</span>
+<span class="ansi-green-fg">--&gt; 100</span><span class="ansi-red-fg">     </span><span class="ansi-green-fg">return</span> BaseLoss<span class="ansi-blue-fg">(</span>nn<span class="ansi-blue-fg">.</span>L1Loss<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">*</span>args<span class="ansi-blue-fg">,</span> axis<span class="ansi-blue-fg">=</span>axis<span class="ansi-blue-fg">,</span> floatify<span class="ansi-blue-fg">=</span>floatify<span class="ansi-blue-fg">,</span> is_2d<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">False</span><span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    101</span> 
+<span class="ansi-green-intense-fg ansi-bold">    102</span> <span class="ansi-red-fg"># Cell</span>
+
+<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai/losses.py</span> in <span class="ansi-cyan-fg">__init__</span><span class="ansi-blue-fg">(self, loss_cls, axis, flatten, floatify, is_2d, *args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">     16</span>     <span class="ansi-green-fg">def</span> __init__<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> loss_cls<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">*</span>args<span class="ansi-blue-fg">,</span> axis<span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">-</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span> flatten<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">True</span><span class="ansi-blue-fg">,</span> floatify<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">False</span><span class="ansi-blue-fg">,</span> is_2d<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">True</span><span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">     17</span>         store_attr<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">&#34;axis,flatten,floatify,is_2d&#34;</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">---&gt; 18</span><span class="ansi-red-fg">         </span>self<span class="ansi-blue-fg">.</span>func <span class="ansi-blue-fg">=</span> loss_cls<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">*</span>args<span class="ansi-blue-fg">,</span><span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     19</span>         functools<span class="ansi-blue-fg">.</span>update_wrapper<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> self<span class="ansi-blue-fg">.</span>func<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     20</span> 
 
 <span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/torch/nn/modules/loss.py</span> in <span class="ansi-cyan-fg">__init__</span><span class="ansi-blue-fg">(self, size_average, reduce, reduction)</span>
 <span class="ansi-green-intense-fg ansi-bold">     92</span> 
