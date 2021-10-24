@@ -869,10 +869,10 @@ Estimated Total Size (MB): 923.26
     <span class="n">inp</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">packed</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]],</span> <span class="n">packed</span><span class="p">[:,:,</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]:]</span>
     <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">packed</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;We&#39;re using Christian&#39;s original code&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;We&#39;re using Christian&#39;s version of Dataloader and model&quot;</span><span class="p">)</span>
     <span class="n">inp</span><span class="p">,</span> <span class="n">targ</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
-    <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;input  = </span><span class="si">{</span><span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">target = </span><span class="si">{</span><span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">params = </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">pred = </span><span class="si">{</span><span class="n">pred</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;input  = </span><span class="si">{</span><span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">target = </span><span class="si">{</span><span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">params = </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">pred   = </span><span class="si">{</span><span class="n">pred</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">pred</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">==</span> <span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
 </pre></div>
 
@@ -886,11 +886,11 @@ Estimated Total Size (MB): 923.26
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>We&#39;re using Christian&#39;s original code
+<pre>We&#39;re using Christian&#39;s version of Dataloader and model
 input  = torch.Size([8, 1, 65536])
 target = torch.Size([8, 1, 65536])
 params = torch.Size([8, 1, 2])
-pred = torch.Size([8, 1, 51214])
+pred   = torch.Size([8, 1, 51214])
 </pre>
 </div>
 </div>
@@ -901,9 +901,9 @@ pred = torch.Size([8, 1, 51214])
 <pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">AssertionError</span>                            Traceback (most recent call last)
-<span class="ansi-green-fg">/tmp/ipykernel_768932/1503745254.py</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
-<span class="ansi-green-intense-fg ansi-bold">      9</span>     pred <span class="ansi-blue-fg">=</span> model<span class="ansi-blue-fg">.</span>forward<span class="ansi-blue-fg">(</span>inp<span class="ansi-blue-fg">,</span> params<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     10</span> print<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#34;input  = {inp.size()}\ntarget = {targ.size()}\nparams = {params.size()}\npred = {pred.size()}&#34;</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">/tmp/ipykernel_768932/890746928.py</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-intense-fg ansi-bold">      9</span>     preds <span class="ansi-blue-fg">=</span> model<span class="ansi-blue-fg">.</span>forward<span class="ansi-blue-fg">(</span>inp<span class="ansi-blue-fg">,</span> params<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     10</span> print<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#34;input  = {inp.size()}\ntarget = {targ.size()}\nparams = {params.size()}\npred   = {pred.size()}&#34;</span><span class="ansi-blue-fg">)</span>
 <span class="ansi-green-fg">---&gt; 11</span><span class="ansi-red-fg"> </span><span class="ansi-green-fg">assert</span> pred<span class="ansi-blue-fg">.</span>size<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">==</span> targ<span class="ansi-blue-fg">.</span>size<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
 
 <span class="ansi-red-fg">AssertionError</span>: </pre>
