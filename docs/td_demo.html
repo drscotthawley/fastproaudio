@@ -597,15 +597,11 @@ Located 45 examples totaling 2.23 min in the val subset.
 <span class="k">class</span> <span class="nc">TCNModel_fastai</span><span class="p">(</span><span class="n">TCNModel</span><span class="p">):</span>
     <span class="s2">&quot;For fastai&#39;s sake, unpack the inputs and params&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="c1">#print(&quot;args = &quot;,args,&quot;, kwargs =&quot;,kwargs)</span>
-        <span class="c1">#self.nparams = kwargs[&#39;nparams&#39;]</span>
-        <span class="c1">#print(&quot;self.nparams = &quot;,self.nparams)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="c1">#print(&quot;self.nparams = &quot;,self.nparams)  # just checking to make sure it&#39;s set</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nparams</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># unpack the params </span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()))</span> <span class="o">==</span> <span class="mi">3</span>   <span class="c1"># sanity check </span>
             <span class="n">x</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">nparams</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,:,</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">nparams</span><span class="p">:]</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
 </pre></div>
@@ -665,7 +661,7 @@ Located 45 examples totaling 2.23 min in the val subset.
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">torchsummary</span> 
-<span class="n">torchsummary</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="n">args</span><span class="o">.</span><span class="n">train_length</span><span class="o">+</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">])],</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<span class="n">torchsummary</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="n">args</span><span class="o">.</span><span class="n">train_length</span><span class="p">)],</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -678,8 +674,7 @@ Located 45 examples totaling 2.23 min in the val subset.
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>self.nparams =  2
-----------------------------------------------------------------
+<pre>----------------------------------------------------------------
         Layer (type)               Output Shape         Param #
 ================================================================
             Linear-1                [-1, 1, 16]              48
@@ -688,86 +683,86 @@ Located 45 examples totaling 2.23 min in the val subset.
               ReLU-4                [-1, 1, 32]               0
             Linear-5                [-1, 1, 32]           1,056
               ReLU-6                [-1, 1, 32]               0
-            Conv1d-7            [-1, 32, 65522]             480
+            Conv1d-7            [-1, 32, 65520]             480
             Linear-8                [-1, 1, 64]           2,112
-       BatchNorm1d-9            [-1, 32, 65522]               0
-             FiLM-10            [-1, 32, 65522]               0
-            PReLU-11            [-1, 32, 65522]              32
-           Conv1d-12            [-1, 32, 65536]              32
-         TCNBlock-13            [-1, 32, 65522]               0
-           Conv1d-14            [-1, 32, 65494]          15,360
+       BatchNorm1d-9            [-1, 32, 65520]               0
+             FiLM-10            [-1, 32, 65520]               0
+            PReLU-11            [-1, 32, 65520]              32
+           Conv1d-12            [-1, 32, 65534]              32
+         TCNBlock-13            [-1, 32, 65520]               0
+           Conv1d-14            [-1, 32, 65492]          15,360
            Linear-15                [-1, 1, 64]           2,112
-      BatchNorm1d-16            [-1, 32, 65494]               0
-             FiLM-17            [-1, 32, 65494]               0
-            PReLU-18            [-1, 32, 65494]              32
-           Conv1d-19            [-1, 32, 65522]              32
-         TCNBlock-20            [-1, 32, 65494]               0
-           Conv1d-21            [-1, 32, 65438]          15,360
+      BatchNorm1d-16            [-1, 32, 65492]               0
+             FiLM-17            [-1, 32, 65492]               0
+            PReLU-18            [-1, 32, 65492]              32
+           Conv1d-19            [-1, 32, 65520]              32
+         TCNBlock-20            [-1, 32, 65492]               0
+           Conv1d-21            [-1, 32, 65436]          15,360
            Linear-22                [-1, 1, 64]           2,112
-      BatchNorm1d-23            [-1, 32, 65438]               0
-             FiLM-24            [-1, 32, 65438]               0
-            PReLU-25            [-1, 32, 65438]              32
-           Conv1d-26            [-1, 32, 65494]              32
-         TCNBlock-27            [-1, 32, 65438]               0
-           Conv1d-28            [-1, 32, 65326]          15,360
+      BatchNorm1d-23            [-1, 32, 65436]               0
+             FiLM-24            [-1, 32, 65436]               0
+            PReLU-25            [-1, 32, 65436]              32
+           Conv1d-26            [-1, 32, 65492]              32
+         TCNBlock-27            [-1, 32, 65436]               0
+           Conv1d-28            [-1, 32, 65324]          15,360
            Linear-29                [-1, 1, 64]           2,112
-      BatchNorm1d-30            [-1, 32, 65326]               0
-             FiLM-31            [-1, 32, 65326]               0
-            PReLU-32            [-1, 32, 65326]              32
-           Conv1d-33            [-1, 32, 65438]              32
-         TCNBlock-34            [-1, 32, 65326]               0
-           Conv1d-35            [-1, 32, 65102]          15,360
+      BatchNorm1d-30            [-1, 32, 65324]               0
+             FiLM-31            [-1, 32, 65324]               0
+            PReLU-32            [-1, 32, 65324]              32
+           Conv1d-33            [-1, 32, 65436]              32
+         TCNBlock-34            [-1, 32, 65324]               0
+           Conv1d-35            [-1, 32, 65100]          15,360
            Linear-36                [-1, 1, 64]           2,112
-      BatchNorm1d-37            [-1, 32, 65102]               0
-             FiLM-38            [-1, 32, 65102]               0
-            PReLU-39            [-1, 32, 65102]              32
-           Conv1d-40            [-1, 32, 65326]              32
-         TCNBlock-41            [-1, 32, 65102]               0
-           Conv1d-42            [-1, 32, 64654]          15,360
+      BatchNorm1d-37            [-1, 32, 65100]               0
+             FiLM-38            [-1, 32, 65100]               0
+            PReLU-39            [-1, 32, 65100]              32
+           Conv1d-40            [-1, 32, 65324]              32
+         TCNBlock-41            [-1, 32, 65100]               0
+           Conv1d-42            [-1, 32, 64652]          15,360
            Linear-43                [-1, 1, 64]           2,112
-      BatchNorm1d-44            [-1, 32, 64654]               0
-             FiLM-45            [-1, 32, 64654]               0
-            PReLU-46            [-1, 32, 64654]              32
-           Conv1d-47            [-1, 32, 65102]              32
-         TCNBlock-48            [-1, 32, 64654]               0
-           Conv1d-49            [-1, 32, 63758]          15,360
+      BatchNorm1d-44            [-1, 32, 64652]               0
+             FiLM-45            [-1, 32, 64652]               0
+            PReLU-46            [-1, 32, 64652]              32
+           Conv1d-47            [-1, 32, 65100]              32
+         TCNBlock-48            [-1, 32, 64652]               0
+           Conv1d-49            [-1, 32, 63756]          15,360
            Linear-50                [-1, 1, 64]           2,112
-      BatchNorm1d-51            [-1, 32, 63758]               0
-             FiLM-52            [-1, 32, 63758]               0
-            PReLU-53            [-1, 32, 63758]              32
-           Conv1d-54            [-1, 32, 64654]              32
-         TCNBlock-55            [-1, 32, 63758]               0
-           Conv1d-56            [-1, 32, 61966]          15,360
+      BatchNorm1d-51            [-1, 32, 63756]               0
+             FiLM-52            [-1, 32, 63756]               0
+            PReLU-53            [-1, 32, 63756]              32
+           Conv1d-54            [-1, 32, 64652]              32
+         TCNBlock-55            [-1, 32, 63756]               0
+           Conv1d-56            [-1, 32, 61964]          15,360
            Linear-57                [-1, 1, 64]           2,112
-      BatchNorm1d-58            [-1, 32, 61966]               0
-             FiLM-59            [-1, 32, 61966]               0
-            PReLU-60            [-1, 32, 61966]              32
-           Conv1d-61            [-1, 32, 63758]              32
-         TCNBlock-62            [-1, 32, 61966]               0
-           Conv1d-63            [-1, 32, 58382]          15,360
+      BatchNorm1d-58            [-1, 32, 61964]               0
+             FiLM-59            [-1, 32, 61964]               0
+            PReLU-60            [-1, 32, 61964]              32
+           Conv1d-61            [-1, 32, 63756]              32
+         TCNBlock-62            [-1, 32, 61964]               0
+           Conv1d-63            [-1, 32, 58380]          15,360
            Linear-64                [-1, 1, 64]           2,112
-      BatchNorm1d-65            [-1, 32, 58382]               0
-             FiLM-66            [-1, 32, 58382]               0
-            PReLU-67            [-1, 32, 58382]              32
-           Conv1d-68            [-1, 32, 61966]              32
-         TCNBlock-69            [-1, 32, 58382]               0
-           Conv1d-70            [-1, 32, 51214]          15,360
+      BatchNorm1d-65            [-1, 32, 58380]               0
+             FiLM-66            [-1, 32, 58380]               0
+            PReLU-67            [-1, 32, 58380]              32
+           Conv1d-68            [-1, 32, 61964]              32
+         TCNBlock-69            [-1, 32, 58380]               0
+           Conv1d-70            [-1, 32, 51212]          15,360
            Linear-71                [-1, 1, 64]           2,112
-      BatchNorm1d-72            [-1, 32, 51214]               0
-             FiLM-73            [-1, 32, 51214]               0
-            PReLU-74            [-1, 32, 51214]              32
-           Conv1d-75            [-1, 32, 58382]              32
-         TCNBlock-76            [-1, 32, 51214]               0
-           Conv1d-77             [-1, 1, 51214]              33
+      BatchNorm1d-72            [-1, 32, 51212]               0
+             FiLM-73            [-1, 32, 51212]               0
+            PReLU-74            [-1, 32, 51212]              32
+           Conv1d-75            [-1, 32, 58380]              32
+         TCNBlock-76            [-1, 32, 51212]               0
+           Conv1d-77             [-1, 1, 51212]              33
 ================================================================
 Total params: 162,161
 Trainable params: 162,161
 Non-trainable params: 0
 ----------------------------------------------------------------
 Input size (MB): 0.25
-Forward/backward pass size (MB): 922.14
+Forward/backward pass size (MB): 922.11
 Params size (MB): 0.62
-Estimated Total Size (MB): 923.01
+Estimated Total Size (MB): 922.98
 ----------------------------------------------------------------
 </pre>
 </div>
@@ -866,7 +861,7 @@ Estimated Total Size (MB): 923.01
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Checking:-Let's-make-sure-the-dls-is/are-working">Checking: Let's make sure the dls is/are working<a class="anchor-link" href="#Checking:-Let's-make-sure-the-dls-is/are-working"> </a></h3>
+<h3 id="Checking:-Let's-make-sure-the-Dataloaders-are-working">Checking: Let's make sure the Dataloaders are working<a class="anchor-link" href="#Checking:-Let's-make-sure-the-Dataloaders-are-working"> </a></h3>
 </div>
 </div>
 </div>
@@ -877,9 +872,9 @@ Estimated Total Size (MB): 923.01
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">inp</span><span class="p">,</span> <span class="n">targ</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
-<span class="n">inp</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]],</span> <span class="n">inp</span><span class="p">[:,:,</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">params</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">packed</span><span class="p">,</span> <span class="n">targ</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
+<span class="n">inp</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">packed</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]],</span> <span class="n">packed</span><span class="p">[:,:,</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]:]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;input  = </span><span class="si">{</span><span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">target = </span><span class="si">{</span><span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">params = </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">==</span> <span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
 </pre></div>
 
@@ -893,7 +888,9 @@ Estimated Total Size (MB): 923.01
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>torch.Size([8, 1, 65536]) torch.Size([8, 1, 65536]) torch.Size([8, 1, 2])
+<pre>input  = torch.Size([8, 1, 65536])
+target = torch.Size([8, 1, 65536])
+params = torch.Size([8, 1, 2])
 </pre>
 </div>
 </div>
@@ -904,6 +901,46 @@ Estimated Total Size (MB): 923.01
 </div>
     {% endraw %}
 
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">packed</span><span class="p">);</span> <span class="n">pred</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>torch.Size([8, 1, 51214])</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>^^^ Wait.  Why isn't the pred size of 51214 the same as the target size of 65536?</p>
+
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Define-the-model">Define the model<a class="anchor-link" href="#Define-the-model"> </a></h3>
@@ -917,7 +954,8 @@ Estimated Total Size (MB): 923.01
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">learn</span> <span class="o">=</span> <span class="n">Learner</span><span class="p">(</span><span class="n">dls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="n">mse</span><span class="p">],</span> <span class="n">loss_func</span><span class="o">=</span><span class="n">L1LossFlat</span><span class="p">,</span> <span class="n">opt_func</span><span class="o">=</span><span class="n">opt_func</span><span class="p">,</span> <span class="n">cbs</span><span class="o">=</span><span class="p">[</span><span class="n">CudaCallback</span><span class="p">()])</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">loss</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">l1</span>  <span class="c1"># Christian sets this up already to be torch.nn.L1Loss()</span>
+<span class="n">learn</span> <span class="o">=</span> <span class="n">Learner</span><span class="p">(</span><span class="n">dls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="n">mse</span><span class="p">],</span> <span class="n">loss_func</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span> <span class="n">opt_func</span><span class="o">=</span><span class="n">opt_func</span><span class="p">,</span> <span class="n">cbs</span><span class="o">=</span><span class="p">[</span><span class="n">CudaCallback</span><span class="p">()])</span>
 </pre></div>
 
     </div>
@@ -929,7 +967,7 @@ Estimated Total Size (MB): 923.01
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>...whoa, no errors yet?! ;-)  Let's train it:</p>
+<p>...no errors yet?! ;-)  Let's train it:</p>
 
 </div>
 </div>
@@ -975,202 +1013,6 @@ Estimated Total Size (MB): 923.01
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_html rendered_html output_subarea ">
-
-    <div>
-        <style>
-            /* Turns off some styling */
-            progress {
-                /* gets rid of default border in Firefox and Opera. */
-                border: none;
-                /* Needs to be in here for Safari polyfill so background images work as expected. */
-                background-size: auto;
-            }
-            .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {
-                background: #F44336;
-            }
-        </style>
-      <progress value='0' class='' max='2' style='width:300px; height:20px; vertical-align: middle;'></progress>
-      0.00% [0/2 00:00<00:00]
-    </div>
-    
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: left;">
-      <th>epoch</th>
-      <th>train_loss</th>
-      <th>valid_loss</th>
-      <th>mse</th>
-      <th>time</th>
-    </tr>
-  </thead>
-  <tbody>
-  </tbody>
-</table><p>
-
-    <div>
-        <style>
-            /* Turns off some styling */
-            progress {
-                /* gets rid of default border in Firefox and Opera. */
-                border: none;
-                /* Needs to be in here for Safari polyfill so background images work as expected. */
-                background-size: auto;
-            }
-            .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {
-                background: #F44336;
-            }
-        </style>
-      <progress value='0' class='' max='48' style='width:300px; height:20px; vertical-align: middle;'></progress>
-      0.00% [0/48 00:00<00:00]
-    </div>
-    
-</div>
-
-</div>
-
-<div class="output_area">
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>self.nparams =  2
-</pre>
-</div>
-</div>
-
-<div class="output_area">
-
-<div class="output_subarea output_text output_error">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">RuntimeError</span>                              Traceback (most recent call last)
-<span class="ansi-green-fg">/tmp/ipykernel_765480/3420901087.py</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
-<span class="ansi-green-fg">----&gt; 1</span><span class="ansi-red-fg"> </span>learn<span class="ansi-blue-fg">.</span>fit<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">2</span><span class="ansi-blue-fg">,</span> lr<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">0.001</span><span class="ansi-blue-fg">)</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">fit</span><span class="ansi-blue-fg">(self, n_epoch, lr, wd, cbs, reset_opt)</span>
-<span class="ansi-green-intense-fg ansi-bold">    279</span>             self<span class="ansi-blue-fg">.</span>opt<span class="ansi-blue-fg">.</span>set_hypers<span class="ansi-blue-fg">(</span>lr<span class="ansi-blue-fg">=</span>self<span class="ansi-blue-fg">.</span>lr <span class="ansi-green-fg">if</span> lr <span class="ansi-green-fg">is</span> <span class="ansi-green-fg">None</span> <span class="ansi-green-fg">else</span> lr<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    280</span>             self<span class="ansi-blue-fg">.</span>n_epoch <span class="ansi-blue-fg">=</span> n_epoch
-<span class="ansi-green-fg">--&gt; 281</span><span class="ansi-red-fg">             </span>self<span class="ansi-blue-fg">.</span>_with_events<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>_do_fit<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">&#39;fit&#39;</span><span class="ansi-blue-fg">,</span> CancelFitException<span class="ansi-blue-fg">,</span> self<span class="ansi-blue-fg">.</span>_end_cleanup<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    282</span> 
-<span class="ansi-green-intense-fg ansi-bold">    283</span>     <span class="ansi-green-fg">def</span> _end_cleanup<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">.</span>dl<span class="ansi-blue-fg">,</span>self<span class="ansi-blue-fg">.</span>xb<span class="ansi-blue-fg">,</span>self<span class="ansi-blue-fg">.</span>yb<span class="ansi-blue-fg">,</span>self<span class="ansi-blue-fg">.</span>pred<span class="ansi-blue-fg">,</span>self<span class="ansi-blue-fg">.</span>loss <span class="ansi-blue-fg">=</span> <span class="ansi-green-fg">None</span><span class="ansi-blue-fg">,</span><span class="ansi-blue-fg">(</span><span class="ansi-green-fg">None</span><span class="ansi-blue-fg">,</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span><span class="ansi-blue-fg">(</span><span class="ansi-green-fg">None</span><span class="ansi-blue-fg">,</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span><span class="ansi-green-fg">None</span><span class="ansi-blue-fg">,</span><span class="ansi-green-fg">None</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">_with_events</span><span class="ansi-blue-fg">(self, f, event_type, ex, final)</span>
-<span class="ansi-green-intense-fg ansi-bold">    225</span> 
-<span class="ansi-green-intense-fg ansi-bold">    226</span>     <span class="ansi-green-fg">def</span> _with_events<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> f<span class="ansi-blue-fg">,</span> event_type<span class="ansi-blue-fg">,</span> ex<span class="ansi-blue-fg">,</span> final<span class="ansi-blue-fg">=</span>noop<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 227</span><span class="ansi-red-fg">         </span><span class="ansi-green-fg">try</span><span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;before_{event_type}&#39;</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">;</span>  f<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    228</span>         <span class="ansi-green-fg">except</span> ex<span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;after_cancel_{event_type}&#39;</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    229</span>         self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;after_{event_type}&#39;</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">;</span>  final<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">_do_fit</span><span class="ansi-blue-fg">(self)</span>
-<span class="ansi-green-intense-fg ansi-bold">    269</span>         <span class="ansi-green-fg">for</span> epoch <span class="ansi-green-fg">in</span> range<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>n_epoch<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">    270</span>             self<span class="ansi-blue-fg">.</span>epoch<span class="ansi-blue-fg">=</span>epoch
-<span class="ansi-green-fg">--&gt; 271</span><span class="ansi-red-fg">             </span>self<span class="ansi-blue-fg">.</span>_with_events<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>_do_epoch<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">&#39;epoch&#39;</span><span class="ansi-blue-fg">,</span> CancelEpochException<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    272</span> 
-<span class="ansi-green-intense-fg ansi-bold">    273</span>     <span class="ansi-green-fg">def</span> fit<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> n_epoch<span class="ansi-blue-fg">,</span> lr<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">None</span><span class="ansi-blue-fg">,</span> wd<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">None</span><span class="ansi-blue-fg">,</span> cbs<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">None</span><span class="ansi-blue-fg">,</span> reset_opt<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">False</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">_with_events</span><span class="ansi-blue-fg">(self, f, event_type, ex, final)</span>
-<span class="ansi-green-intense-fg ansi-bold">    225</span> 
-<span class="ansi-green-intense-fg ansi-bold">    226</span>     <span class="ansi-green-fg">def</span> _with_events<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> f<span class="ansi-blue-fg">,</span> event_type<span class="ansi-blue-fg">,</span> ex<span class="ansi-blue-fg">,</span> final<span class="ansi-blue-fg">=</span>noop<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 227</span><span class="ansi-red-fg">         </span><span class="ansi-green-fg">try</span><span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;before_{event_type}&#39;</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">;</span>  f<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    228</span>         <span class="ansi-green-fg">except</span> ex<span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;after_cancel_{event_type}&#39;</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    229</span>         self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;after_{event_type}&#39;</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">;</span>  final<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">_do_epoch</span><span class="ansi-blue-fg">(self)</span>
-<span class="ansi-green-intense-fg ansi-bold">    263</span> 
-<span class="ansi-green-intense-fg ansi-bold">    264</span>     <span class="ansi-green-fg">def</span> _do_epoch<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 265</span><span class="ansi-red-fg">         </span>self<span class="ansi-blue-fg">.</span>_do_epoch_train<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    266</span>         self<span class="ansi-blue-fg">.</span>_do_epoch_validate<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    267</span> 
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">_do_epoch_train</span><span class="ansi-blue-fg">(self)</span>
-<span class="ansi-green-intense-fg ansi-bold">    255</span>     <span class="ansi-green-fg">def</span> _do_epoch_train<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">    256</span>         self<span class="ansi-blue-fg">.</span>dl <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>dls<span class="ansi-blue-fg">.</span>train
-<span class="ansi-green-fg">--&gt; 257</span><span class="ansi-red-fg">         </span>self<span class="ansi-blue-fg">.</span>_with_events<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>all_batches<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">&#39;train&#39;</span><span class="ansi-blue-fg">,</span> CancelTrainException<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    258</span> 
-<span class="ansi-green-intense-fg ansi-bold">    259</span>     <span class="ansi-green-fg">def</span> _do_epoch_validate<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> ds_idx<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span> dl<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">None</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">_with_events</span><span class="ansi-blue-fg">(self, f, event_type, ex, final)</span>
-<span class="ansi-green-intense-fg ansi-bold">    225</span> 
-<span class="ansi-green-intense-fg ansi-bold">    226</span>     <span class="ansi-green-fg">def</span> _with_events<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> f<span class="ansi-blue-fg">,</span> event_type<span class="ansi-blue-fg">,</span> ex<span class="ansi-blue-fg">,</span> final<span class="ansi-blue-fg">=</span>noop<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 227</span><span class="ansi-red-fg">         </span><span class="ansi-green-fg">try</span><span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;before_{event_type}&#39;</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">;</span>  f<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    228</span>         <span class="ansi-green-fg">except</span> ex<span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;after_cancel_{event_type}&#39;</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    229</span>         self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;after_{event_type}&#39;</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">;</span>  final<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">all_batches</span><span class="ansi-blue-fg">(self)</span>
-<span class="ansi-green-intense-fg ansi-bold">    232</span>         <span class="ansi-blue-fg">&#34;Train or evaluate `self.model` on all the batches of `self.dl`&#34;</span>
-<span class="ansi-green-intense-fg ansi-bold">    233</span>         self<span class="ansi-blue-fg">.</span>n_iter <span class="ansi-blue-fg">=</span> len<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>dl<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-fg">--&gt; 234</span><span class="ansi-red-fg">         </span><span class="ansi-green-fg">for</span> o <span class="ansi-green-fg">in</span> enumerate<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>dl<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">.</span>one_batch<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">*</span>o<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    235</span> 
-<span class="ansi-green-intense-fg ansi-bold">    236</span>     <span class="ansi-green-fg">def</span> _do_one_batch<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">one_batch</span><span class="ansi-blue-fg">(self, i, b)</span>
-<span class="ansi-green-intense-fg ansi-bold">    251</span>         self<span class="ansi-blue-fg">.</span>iter <span class="ansi-blue-fg">=</span> i
-<span class="ansi-green-intense-fg ansi-bold">    252</span>         self<span class="ansi-blue-fg">.</span>_split<span class="ansi-blue-fg">(</span>b<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-fg">--&gt; 253</span><span class="ansi-red-fg">         </span>self<span class="ansi-blue-fg">.</span>_with_events<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>_do_one_batch<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">&#39;batch&#39;</span><span class="ansi-blue-fg">,</span> CancelBatchException<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    254</span> 
-<span class="ansi-green-intense-fg ansi-bold">    255</span>     <span class="ansi-green-fg">def</span> _do_epoch_train<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">_with_events</span><span class="ansi-blue-fg">(self, f, event_type, ex, final)</span>
-<span class="ansi-green-intense-fg ansi-bold">    225</span> 
-<span class="ansi-green-intense-fg ansi-bold">    226</span>     <span class="ansi-green-fg">def</span> _with_events<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> f<span class="ansi-blue-fg">,</span> event_type<span class="ansi-blue-fg">,</span> ex<span class="ansi-blue-fg">,</span> final<span class="ansi-blue-fg">=</span>noop<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 227</span><span class="ansi-red-fg">         </span><span class="ansi-green-fg">try</span><span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;before_{event_type}&#39;</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">;</span>  f<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    228</span>         <span class="ansi-green-fg">except</span> ex<span class="ansi-blue-fg">:</span> self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;after_cancel_{event_type}&#39;</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    229</span>         self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#39;after_{event_type}&#39;</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">;</span>  final<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai_minima/learner.py</span> in <span class="ansi-cyan-fg">_do_one_batch</span><span class="ansi-blue-fg">(self)</span>
-<span class="ansi-green-intense-fg ansi-bold">    238</span>         self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">&#39;after_pred&#39;</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    239</span>         <span class="ansi-green-fg">if</span> len<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>yb<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 240</span><span class="ansi-red-fg">             </span>self<span class="ansi-blue-fg">.</span>loss_grad <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>loss_func<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">.</span>pred<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">*</span>self<span class="ansi-blue-fg">.</span>yb<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    241</span>             self<span class="ansi-blue-fg">.</span>loss <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>loss_grad<span class="ansi-blue-fg">.</span>clone<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    242</span>         self<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">&#39;after_loss&#39;</span><span class="ansi-blue-fg">)</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai/losses.py</span> in <span class="ansi-cyan-fg">L1LossFlat</span><span class="ansi-blue-fg">(axis, floatify, *args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">     98</span> <span class="ansi-green-fg">def</span> L1LossFlat<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">*</span>args<span class="ansi-blue-fg">,</span> axis<span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">-</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span> floatify<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">True</span><span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">     99</span>     <span class="ansi-blue-fg">&#34;Same as `nn.L1Loss`, but flattens input and target.&#34;</span>
-<span class="ansi-green-fg">--&gt; 100</span><span class="ansi-red-fg">     </span><span class="ansi-green-fg">return</span> BaseLoss<span class="ansi-blue-fg">(</span>nn<span class="ansi-blue-fg">.</span>L1Loss<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">*</span>args<span class="ansi-blue-fg">,</span> axis<span class="ansi-blue-fg">=</span>axis<span class="ansi-blue-fg">,</span> floatify<span class="ansi-blue-fg">=</span>floatify<span class="ansi-blue-fg">,</span> is_2d<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">False</span><span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    101</span> 
-<span class="ansi-green-intense-fg ansi-bold">    102</span> <span class="ansi-red-fg"># Cell</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/fastai/losses.py</span> in <span class="ansi-cyan-fg">__init__</span><span class="ansi-blue-fg">(self, loss_cls, axis, flatten, floatify, is_2d, *args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">     16</span>     <span class="ansi-green-fg">def</span> __init__<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> loss_cls<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">*</span>args<span class="ansi-blue-fg">,</span> axis<span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">-</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span> flatten<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">True</span><span class="ansi-blue-fg">,</span> floatify<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">False</span><span class="ansi-blue-fg">,</span> is_2d<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">True</span><span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">     17</span>         store_attr<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">&#34;axis,flatten,floatify,is_2d&#34;</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-fg">---&gt; 18</span><span class="ansi-red-fg">         </span>self<span class="ansi-blue-fg">.</span>func <span class="ansi-blue-fg">=</span> loss_cls<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">*</span>args<span class="ansi-blue-fg">,</span><span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     19</span>         functools<span class="ansi-blue-fg">.</span>update_wrapper<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> self<span class="ansi-blue-fg">.</span>func<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     20</span> 
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/torch/nn/modules/loss.py</span> in <span class="ansi-cyan-fg">__init__</span><span class="ansi-blue-fg">(self, size_average, reduce, reduction)</span>
-<span class="ansi-green-intense-fg ansi-bold">     92</span> 
-<span class="ansi-green-intense-fg ansi-bold">     93</span>     <span class="ansi-green-fg">def</span> __init__<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> size_average<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">None</span><span class="ansi-blue-fg">,</span> reduce<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">None</span><span class="ansi-blue-fg">,</span> reduction<span class="ansi-blue-fg">:</span> str <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">&#39;mean&#39;</span><span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">-&gt;</span> <span class="ansi-green-fg">None</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">---&gt; 94</span><span class="ansi-red-fg">         </span>super<span class="ansi-blue-fg">(</span>L1Loss<span class="ansi-blue-fg">,</span> self<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">.</span>__init__<span class="ansi-blue-fg">(</span>size_average<span class="ansi-blue-fg">,</span> reduce<span class="ansi-blue-fg">,</span> reduction<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     95</span> 
-<span class="ansi-green-intense-fg ansi-bold">     96</span>     <span class="ansi-green-fg">def</span> forward<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> input<span class="ansi-blue-fg">:</span> Tensor<span class="ansi-blue-fg">,</span> target<span class="ansi-blue-fg">:</span> Tensor<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">-&gt;</span> Tensor<span class="ansi-blue-fg">:</span>
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/torch/nn/modules/loss.py</span> in <span class="ansi-cyan-fg">__init__</span><span class="ansi-blue-fg">(self, size_average, reduce, reduction)</span>
-<span class="ansi-green-intense-fg ansi-bold">     16</span>         super<span class="ansi-blue-fg">(</span>_Loss<span class="ansi-blue-fg">,</span> self<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">.</span>__init__<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     17</span>         <span class="ansi-green-fg">if</span> size_average <span class="ansi-green-fg">is</span> <span class="ansi-green-fg">not</span> <span class="ansi-green-fg">None</span> <span class="ansi-green-fg">or</span> reduce <span class="ansi-green-fg">is</span> <span class="ansi-green-fg">not</span> <span class="ansi-green-fg">None</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">---&gt; 18</span><span class="ansi-red-fg">             </span>self<span class="ansi-blue-fg">.</span>reduction<span class="ansi-blue-fg">:</span> str <span class="ansi-blue-fg">=</span> _Reduction<span class="ansi-blue-fg">.</span>legacy_get_string<span class="ansi-blue-fg">(</span>size_average<span class="ansi-blue-fg">,</span> reduce<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     19</span>         <span class="ansi-green-fg">else</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">     20</span>             self<span class="ansi-blue-fg">.</span>reduction <span class="ansi-blue-fg">=</span> reduction
-
-<span class="ansi-green-fg">~/envs/fastai/lib/python3.9/site-packages/torch/nn/_reduction.py</span> in <span class="ansi-cyan-fg">legacy_get_string</span><span class="ansi-blue-fg">(size_average, reduce, emit_warning)</span>
-<span class="ansi-green-intense-fg ansi-bold">     33</span>         reduce <span class="ansi-blue-fg">=</span> <span class="ansi-green-fg">True</span>
-<span class="ansi-green-intense-fg ansi-bold">     34</span> 
-<span class="ansi-green-fg">---&gt; 35</span><span class="ansi-red-fg">     </span><span class="ansi-green-fg">if</span> size_average <span class="ansi-green-fg">and</span> reduce<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">     36</span>         ret <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">&#39;mean&#39;</span>
-<span class="ansi-green-intense-fg ansi-bold">     37</span>     <span class="ansi-green-fg">elif</span> reduce<span class="ansi-blue-fg">:</span>
-
-<span class="ansi-red-fg">RuntimeError</span>: Boolean value of Tensor with more than one value is ambiguous</pre>
-</div>
-</div>
-
 </div>
 </div>
 
