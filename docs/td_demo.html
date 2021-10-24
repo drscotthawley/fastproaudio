@@ -587,6 +587,13 @@ Located 45 examples totaling 2.23 min in the val subset.
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Let's take a look at the model:</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -708,6 +715,16 @@ Estimated Total Size (MB): 923.26
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The tricky part of this model, as far as fastai goes, is that it doesn't just take one input. The <code>TCNModel</code>'s <code>.forward()</code> definition reads</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</pre></div>
+<p>The fact that <code>p</code> is allowed to be undefined is perhaps helpful for getting started, but it <em>is</em> where our parameters are going to go, so we'll need that eventually.  fastai doesn't usually accomodate multiple inputs easily.  Hmmmm.</p>
+
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Getting-the-model-into-fastai-form">Getting the model into fastai form<a class="anchor-link" href="#Getting-the-model-into-fastai-form"> </a></h3>
