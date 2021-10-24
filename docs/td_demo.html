@@ -77,6 +77,23 @@ nb_path: "01_td_demo.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">pip</span> install -q fastai_minima wheel torchsummary
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">fastai.vision.all</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">fastai.text.all</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -429,7 +446,8 @@ Max:  0.144,  Min: -0.159, Mean: -0.000, Std Dev:  0.018
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Import-Steinmetz's-(PyTorch-Lighting)-Code-(and-make-it-work-with-fastai)">Import Steinmetz's (PyTorch-Lighting) Code (and make it work with fastai)<a class="anchor-link" href="#Import-Steinmetz's-(PyTorch-Lighting)-Code-(and-make-it-work-with-fastai)"> </a></h3>
+<h3 id="Import-Steinmetz's-(PyTorch-Lighting)-Code-(and-make-it-work-with-fastai)">Import Steinmetz's (PyTorch-Lighting) Code (and make it work with fastai)<a class="anchor-link" href="#Import-Steinmetz's-(PyTorch-Lighting)-Code-(and-make-it-work-with-fastai)"> </a></h3><p>Installing from GitHub can take a little while BTW...</p>
+
 </div>
 </div>
 </div>
@@ -440,7 +458,7 @@ Max:  0.144,  Min: -0.159, Mean: -0.000, Std Dev:  0.018
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">pip</span> install -q wheel torchsummary git+https://github.com/drscotthawley/micro-tcn.git  git+https://github.com/csteinmetz1/auraloss
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">pip</span> install -q git+https://github.com/drscotthawley/micro-tcn.git  git+https://github.com/csteinmetz1/auraloss
 </pre></div>
 
     </div>
@@ -525,7 +543,7 @@ Note: you may need to restart the kernel to use updated packages.
 <span class="n">args</span> <span class="o">=</span> <span class="n">Args</span><span class="p">()</span>
 
 <span class="c1"># setup the dataloaders</span>
-<span class="n">train_dataset</span> <span class="o">=</span> <span class="n">SignalTrainLA2ADataset_fastai</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> 
+<span class="n">train_dataset</span> <span class="o">=</span> <span class="n">SignalTrainLA2ADataset</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> 
                     <span class="n">subset</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">train_subset</span><span class="p">,</span> 
                     <span class="n">fraction</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">train_fraction</span><span class="p">,</span>
                     <span class="n">half</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="mi">16</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span> 
@@ -538,7 +556,7 @@ Note: you may need to restart the kernel to use updated packages.
                     <span class="n">num_workers</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_workers</span><span class="p">,</span>
                     <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="n">val_dataset</span> <span class="o">=</span> <span class="n">SignalTrainLA2ADataset_fastai</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> 
+<span class="n">val_dataset</span> <span class="o">=</span> <span class="n">SignalTrainLA2ADataset</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> 
                     <span class="n">preload</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">preload</span><span class="p">,</span>
                     <span class="n">half</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="mi">16</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
                     <span class="n">subset</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">val_subset</span><span class="p">,</span>
@@ -636,7 +654,7 @@ Located 45 examples totaling 2.23 min in the val subset.
 <span class="n">dict_args</span> <span class="o">=</span> <span class="n">train_configs</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
 <span class="n">dict_args</span><span class="p">[</span><span class="s2">&quot;nparams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
 
-<span class="n">model</span> <span class="o">=</span> <span class="n">TCNModel_fastai</span><span class="p">(</span><span class="o">**</span><span class="n">dict_args</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">TCNModel</span><span class="p">(</span><span class="o">**</span><span class="n">dict_args</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -661,7 +679,11 @@ Located 45 examples totaling 2.23 min in the val subset.
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">torchsummary</span> 
-<span class="n">torchsummary</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="n">args</span><span class="o">.</span><span class="n">train_length</span><span class="p">)],</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">==</span> <span class="n">TCNModel_fastai</span><span class="p">:</span>
+    <span class="n">torchsummary</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="n">args</span><span class="o">.</span><span class="n">train_length</span><span class="p">)],</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">torchsummary</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="n">args</span><span class="o">.</span><span class="n">train_length</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)],</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -683,86 +705,86 @@ Located 45 examples totaling 2.23 min in the val subset.
               ReLU-4                [-1, 1, 32]               0
             Linear-5                [-1, 1, 32]           1,056
               ReLU-6                [-1, 1, 32]               0
-            Conv1d-7            [-1, 32, 65520]             480
+            Conv1d-7            [-1, 32, 65522]             480
             Linear-8                [-1, 1, 64]           2,112
-       BatchNorm1d-9            [-1, 32, 65520]               0
-             FiLM-10            [-1, 32, 65520]               0
-            PReLU-11            [-1, 32, 65520]              32
-           Conv1d-12            [-1, 32, 65534]              32
-         TCNBlock-13            [-1, 32, 65520]               0
-           Conv1d-14            [-1, 32, 65492]          15,360
+       BatchNorm1d-9            [-1, 32, 65522]               0
+             FiLM-10            [-1, 32, 65522]               0
+            PReLU-11            [-1, 32, 65522]              32
+           Conv1d-12            [-1, 32, 65536]              32
+         TCNBlock-13            [-1, 32, 65522]               0
+           Conv1d-14            [-1, 32, 65494]          15,360
            Linear-15                [-1, 1, 64]           2,112
-      BatchNorm1d-16            [-1, 32, 65492]               0
-             FiLM-17            [-1, 32, 65492]               0
-            PReLU-18            [-1, 32, 65492]              32
-           Conv1d-19            [-1, 32, 65520]              32
-         TCNBlock-20            [-1, 32, 65492]               0
-           Conv1d-21            [-1, 32, 65436]          15,360
+      BatchNorm1d-16            [-1, 32, 65494]               0
+             FiLM-17            [-1, 32, 65494]               0
+            PReLU-18            [-1, 32, 65494]              32
+           Conv1d-19            [-1, 32, 65522]              32
+         TCNBlock-20            [-1, 32, 65494]               0
+           Conv1d-21            [-1, 32, 65438]          15,360
            Linear-22                [-1, 1, 64]           2,112
-      BatchNorm1d-23            [-1, 32, 65436]               0
-             FiLM-24            [-1, 32, 65436]               0
-            PReLU-25            [-1, 32, 65436]              32
-           Conv1d-26            [-1, 32, 65492]              32
-         TCNBlock-27            [-1, 32, 65436]               0
-           Conv1d-28            [-1, 32, 65324]          15,360
+      BatchNorm1d-23            [-1, 32, 65438]               0
+             FiLM-24            [-1, 32, 65438]               0
+            PReLU-25            [-1, 32, 65438]              32
+           Conv1d-26            [-1, 32, 65494]              32
+         TCNBlock-27            [-1, 32, 65438]               0
+           Conv1d-28            [-1, 32, 65326]          15,360
            Linear-29                [-1, 1, 64]           2,112
-      BatchNorm1d-30            [-1, 32, 65324]               0
-             FiLM-31            [-1, 32, 65324]               0
-            PReLU-32            [-1, 32, 65324]              32
-           Conv1d-33            [-1, 32, 65436]              32
-         TCNBlock-34            [-1, 32, 65324]               0
-           Conv1d-35            [-1, 32, 65100]          15,360
+      BatchNorm1d-30            [-1, 32, 65326]               0
+             FiLM-31            [-1, 32, 65326]               0
+            PReLU-32            [-1, 32, 65326]              32
+           Conv1d-33            [-1, 32, 65438]              32
+         TCNBlock-34            [-1, 32, 65326]               0
+           Conv1d-35            [-1, 32, 65102]          15,360
            Linear-36                [-1, 1, 64]           2,112
-      BatchNorm1d-37            [-1, 32, 65100]               0
-             FiLM-38            [-1, 32, 65100]               0
-            PReLU-39            [-1, 32, 65100]              32
-           Conv1d-40            [-1, 32, 65324]              32
-         TCNBlock-41            [-1, 32, 65100]               0
-           Conv1d-42            [-1, 32, 64652]          15,360
+      BatchNorm1d-37            [-1, 32, 65102]               0
+             FiLM-38            [-1, 32, 65102]               0
+            PReLU-39            [-1, 32, 65102]              32
+           Conv1d-40            [-1, 32, 65326]              32
+         TCNBlock-41            [-1, 32, 65102]               0
+           Conv1d-42            [-1, 32, 64654]          15,360
            Linear-43                [-1, 1, 64]           2,112
-      BatchNorm1d-44            [-1, 32, 64652]               0
-             FiLM-45            [-1, 32, 64652]               0
-            PReLU-46            [-1, 32, 64652]              32
-           Conv1d-47            [-1, 32, 65100]              32
-         TCNBlock-48            [-1, 32, 64652]               0
-           Conv1d-49            [-1, 32, 63756]          15,360
+      BatchNorm1d-44            [-1, 32, 64654]               0
+             FiLM-45            [-1, 32, 64654]               0
+            PReLU-46            [-1, 32, 64654]              32
+           Conv1d-47            [-1, 32, 65102]              32
+         TCNBlock-48            [-1, 32, 64654]               0
+           Conv1d-49            [-1, 32, 63758]          15,360
            Linear-50                [-1, 1, 64]           2,112
-      BatchNorm1d-51            [-1, 32, 63756]               0
-             FiLM-52            [-1, 32, 63756]               0
-            PReLU-53            [-1, 32, 63756]              32
-           Conv1d-54            [-1, 32, 64652]              32
-         TCNBlock-55            [-1, 32, 63756]               0
-           Conv1d-56            [-1, 32, 61964]          15,360
+      BatchNorm1d-51            [-1, 32, 63758]               0
+             FiLM-52            [-1, 32, 63758]               0
+            PReLU-53            [-1, 32, 63758]              32
+           Conv1d-54            [-1, 32, 64654]              32
+         TCNBlock-55            [-1, 32, 63758]               0
+           Conv1d-56            [-1, 32, 61966]          15,360
            Linear-57                [-1, 1, 64]           2,112
-      BatchNorm1d-58            [-1, 32, 61964]               0
-             FiLM-59            [-1, 32, 61964]               0
-            PReLU-60            [-1, 32, 61964]              32
-           Conv1d-61            [-1, 32, 63756]              32
-         TCNBlock-62            [-1, 32, 61964]               0
-           Conv1d-63            [-1, 32, 58380]          15,360
+      BatchNorm1d-58            [-1, 32, 61966]               0
+             FiLM-59            [-1, 32, 61966]               0
+            PReLU-60            [-1, 32, 61966]              32
+           Conv1d-61            [-1, 32, 63758]              32
+         TCNBlock-62            [-1, 32, 61966]               0
+           Conv1d-63            [-1, 32, 58382]          15,360
            Linear-64                [-1, 1, 64]           2,112
-      BatchNorm1d-65            [-1, 32, 58380]               0
-             FiLM-66            [-1, 32, 58380]               0
-            PReLU-67            [-1, 32, 58380]              32
-           Conv1d-68            [-1, 32, 61964]              32
-         TCNBlock-69            [-1, 32, 58380]               0
-           Conv1d-70            [-1, 32, 51212]          15,360
+      BatchNorm1d-65            [-1, 32, 58382]               0
+             FiLM-66            [-1, 32, 58382]               0
+            PReLU-67            [-1, 32, 58382]              32
+           Conv1d-68            [-1, 32, 61966]              32
+         TCNBlock-69            [-1, 32, 58382]               0
+           Conv1d-70            [-1, 32, 51214]          15,360
            Linear-71                [-1, 1, 64]           2,112
-      BatchNorm1d-72            [-1, 32, 51212]               0
-             FiLM-73            [-1, 32, 51212]               0
-            PReLU-74            [-1, 32, 51212]              32
-           Conv1d-75            [-1, 32, 58380]              32
-         TCNBlock-76            [-1, 32, 51212]               0
-           Conv1d-77             [-1, 1, 51212]              33
+      BatchNorm1d-72            [-1, 32, 51214]               0
+             FiLM-73            [-1, 32, 51214]               0
+            PReLU-74            [-1, 32, 51214]              32
+           Conv1d-75            [-1, 32, 58382]              32
+         TCNBlock-76            [-1, 32, 51214]               0
+           Conv1d-77             [-1, 1, 51214]              33
 ================================================================
 Total params: 162,161
 Trainable params: 162,161
 Non-trainable params: 0
 ----------------------------------------------------------------
-Input size (MB): 0.25
-Forward/backward pass size (MB): 922.11
+Input size (MB): 0.50
+Forward/backward pass size (MB): 922.14
 Params size (MB): 0.62
-Estimated Total Size (MB): 922.98
+Estimated Total Size (MB): 923.26
 ----------------------------------------------------------------
 </pre>
 </div>
@@ -787,37 +809,6 @@ Estimated Total Size (MB): 922.98
 </div>
 </div>
 </div>
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">pip</span> install fastai_minima -q
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Note: you may need to restart the kernel to use updated packages.
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -872,10 +863,17 @@ Estimated Total Size (MB): 922.98
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">packed</span><span class="p">,</span> <span class="n">targ</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
-<span class="n">inp</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">packed</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]],</span> <span class="n">packed</span><span class="p">[:,:,</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;input  = </span><span class="si">{</span><span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">target = </span><span class="si">{</span><span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">params = </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">==</span> <span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">==</span> <span class="n">TCNModel_fastai</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;We&#39;re using Hawley&#39;s modified code&quot;</span><span class="p">)</span>
+    <span class="n">packed</span><span class="p">,</span> <span class="n">targ</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
+    <span class="n">inp</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">packed</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]],</span> <span class="n">packed</span><span class="p">[:,:,</span><span class="o">-</span><span class="n">dict_args</span><span class="p">[</span><span class="s1">&#39;nparams&#39;</span><span class="p">]:]</span>
+    <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">packed</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;We&#39;re using Christian&#39;s original code&quot;</span><span class="p">)</span>
+    <span class="n">inp</span><span class="p">,</span> <span class="n">targ</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
+    <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;input  = </span><span class="si">{</span><span class="n">inp</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">target = </span><span class="si">{</span><span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">params = </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">pred = </span><span class="si">{</span><span class="n">pred</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pred</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">==</span> <span class="n">targ</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
 </pre></div>
 
     </div>
@@ -888,91 +886,28 @@ Estimated Total Size (MB): 922.98
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>input  = torch.Size([8, 1, 65536])
+<pre>We&#39;re using Christian&#39;s original code
+input  = torch.Size([8, 1, 65536])
 target = torch.Size([8, 1, 65536])
 params = torch.Size([8, 1, 2])
+pred = torch.Size([8, 1, 51214])
 </pre>
 </div>
 </div>
 
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>And compare these against the model prediction:</p>
-
-</div>
-</div>
-</div>
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">packed</span><span class="p">);</span> <span class="n">pred</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
 <div class="output_area">
 
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">AssertionError</span>                            Traceback (most recent call last)
+<span class="ansi-green-fg">/tmp/ipykernel_768932/1503745254.py</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-intense-fg ansi-bold">      9</span>     pred <span class="ansi-blue-fg">=</span> model<span class="ansi-blue-fg">.</span>forward<span class="ansi-blue-fg">(</span>inp<span class="ansi-blue-fg">,</span> params<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     10</span> print<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">f&#34;input  = {inp.size()}\ntarget = {targ.size()}\nparams = {params.size()}\npred = {pred.size()}&#34;</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">---&gt; 11</span><span class="ansi-red-fg"> </span><span class="ansi-green-fg">assert</span> pred<span class="ansi-blue-fg">.</span>size<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">==</span> targ<span class="ansi-blue-fg">.</span>size<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
 
-
-<div class="output_text output_subarea output_execute_result">
-<pre>torch.Size([8, 1, 51214])</pre>
+<span class="ansi-red-fg">AssertionError</span>: </pre>
 </div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>^^^ Wait.  Why isn't the pred size of 51214 the same as the target size of 65536?</p>
-
-</div>
-</div>
-</div>
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="mi">51214</span> <span class="o">+</span> <span class="mi">65536</span><span class="p">,</span> <span class="mi">65536</span> <span class="o">-</span> <span class="mi">51214</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>(116750, 14322)</pre>
-</div>
-
 </div>
 
 </div>
