@@ -93,6 +93,6 @@ def show_audio(waveform, sample_rate, info=True, play=True, waveform_plot=True, 
     if play: play_audio(waveform, sample_rate)
     ncols = waveform_plot + melspec_plot
     if ncols > 0:
-        fig, ax = plt.subplots(nrows=1, ncols=ncols, figsize=(ncols*6,4))
+        fig, ax = plt.subplots(nrows=1, ncols=ncols, figsize=(12,4))
         if waveform_plot: plot_waveform(waveform, sample_rate, ax=ax[0])
         if melspec_plot: plot_melspec(waveform, sample_rate, ax=ax[1], ref=500) # ref=500 is a bit arbitrary but works good
