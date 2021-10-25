@@ -66,12 +66,12 @@ def plot_waveform(waveform, sample_rate, ax=None, xlim=None, ylim=[-1,1]):
     if num_channels > 1: ax.legend()
     if ax is None: plt.show(block=False)
 
-def plot_melspec(waveform, sample_rate, ax=None):
+def plot_melspec(waveform, sample_rate, ax=None, ref=np.max, vmin=-70, vmax=2):
     "Mel-spectrogram plot, from librosa documentation"
     if ax is None: fig, ax = plt.subplots()
     M = librosa.feature.melspectrogram(y=waveform.numpy()[0], sr=sample_rate)
-    M_db = librosa.power_to_db(M, ref=np.max)
-    img = librosa.display.specshow(M_db, y_axis='mel', x_axis='time', ax=ax, sr=sample_rate)
+    M_db = librosa.power_to_db(M, ref=ref)
+    img = librosa.display.specshow(M_db, y_axis='mel', x_axis='time', ax=ax, sr=sample_rate, vmin=vmin, vmax=vmax)
     ax.set(title='Mel spectrogram display (Channel 0)')
     plt.colorbar(img, ax=ax, format="%+2.f dB")
     if ax is None: plt.show(block=False)
@@ -95,4 +95,4 @@ def show_audio(waveform, sample_rate, info=True, play=True, waveform_plot=True, 
     if ncols > 0:
         fig, ax = plt.subplots(nrows=1, ncols=ncols, figsize=(ncols*6,4))
         if waveform_plot: plot_waveform(waveform, sample_rate, ax=ax[0])
-        if melspec_plot: plot_melspec(waveform, sample_rate, ax=ax[1])
+        if melspec_plot: plot_melspec(waveform, sample_rate, ax=ax[1], ref=500) # ref=500 is a bit arbitrary but works good
