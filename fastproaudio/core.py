@@ -81,7 +81,7 @@ def play_audio(waveform, sample_rate):
     waveform = waveform.numpy()
     num_channels, num_frames = waveform.shape
     if num_channels == 1:
-        display(Audio(waveform[0], rate=sample_rate))
+        display(Audio(waveform[0], rate=sample_rate, normalize=False))
     elif num_channels == 2:
         display(Audio((waveform[0], waveform[1]), rate=sample_rate, normalize=False))
     else:
