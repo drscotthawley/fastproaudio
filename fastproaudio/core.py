@@ -47,7 +47,7 @@ def get_audio_data(url):
 # Cell
 
 def show_info(waveform, sample_rate):
-    print(f"Shape: {tuple(waveform.shape)}, Dtype: {waveform.dtype}, Duration: {waveform.numpy().shape[-1]/sample_rate} s")
+    print(f"Shape: {tuple(waveform.shape)}, Dtype: {waveform.dtype}, Duration: {waveform.shape[-1]/sample_rate} s")
     print(f"Max: {waveform.max().item():6.3f},  Min: {waveform.min().item():6.3f}, Mean: {waveform.mean().item():6.3f}, Std Dev: {waveform.std().item():6.3f}")
 
 def plot_waveform(waveform, sample_rate, ax=None, xlim=None, ylim=[-1,1]):
