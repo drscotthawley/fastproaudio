@@ -954,7 +954,7 @@ pred   = torch.Size([8, 1, 51214])
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Define-the-model-and-callbacks">Define the model and callbacks<a class="anchor-link" href="#Define-the-model-and-callbacks"> </a></h2><p>We're going to add a new custom WandBAudio callback futher below, that we'll uses when we call <code>fit()</code>.</p>
+<h2 id="Define-the-fastai-Learner-and-callbacks">Define the fastai Learner and callbacks<a class="anchor-link" href="#Define-the-fastai-Learner-and-callbacks"> </a></h2><p>We're going to add a new custom WandBAudio callback futher below, that we'll uses when we call <code>fit()</code>.</p>
 
 </div>
 </div>
@@ -996,6 +996,12 @@ pred   = torch.Size([8, 1, 51214])
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Learner-and-wandb-init">Learner and wandb init<a class="anchor-link" href="#Learner-and-wandb-init"> </a></h4>
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -1036,13 +1042,13 @@ pred   = torch.Size([8, 1, 51214])
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Train-the-model!">Train the model!<a class="anchor-link" href="#Train-the-model!"> </a></h2>
+<h2 id="Train-the-model">Train the model<a class="anchor-link" href="#Train-the-model"> </a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We can use the learning rate finder to suggest a learning rate:</p>
+<p>We can use the fastai learning rate finder to suggest a learning rate:</p>
 
 </div>
 </div>
