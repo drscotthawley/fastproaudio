@@ -66,7 +66,7 @@ def plot_waveform(waveform, sample_rate, ax=None, xlim=None, ylim=[-1,1]):
     if num_channels > 1: ax.legend()
     if ax is None: plt.show(block=False)
 
-def plot_melspec(waveform, sample_rate, ax=None, ref=np.max, vmin=-70, vmax=2):
+def plot_melspec(waveform, sample_rate, ax=None, ref=np.max, vmin=-70, vmax=0):
     "Mel-spectrogram plot, from librosa documentation"
     if ax is None: fig, ax = plt.subplots()
     M = librosa.feature.melspectrogram(y=waveform.numpy()[0], sr=sample_rate)
