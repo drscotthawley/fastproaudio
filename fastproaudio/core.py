@@ -87,12 +87,13 @@ def play_audio(waveform, sample_rate):
     else:
         raise ValueError("Waveform with more than 2 channels are not supported.")
 
-def show_audio(waveform, sample_rate, info=True, play=True, waveform_plot=True, melspec_plot=True):
+def show_audio(waveform, sample_rate, info=True, play=True, waveform_plot=True, melspec_plot=True, ref=500):
     "This display routine is an amalgam of the torchaudio tutorial and the librosa documentation:"
+    # ref=500 is a bit arbitrary choice of reference intensity value but works well
     if info: show_info(waveform, sample_rate)
     if play: play_audio(waveform, sample_rate)
     ncols = waveform_plot + melspec_plot
     if ncols > 0:
         fig, ax = plt.subplots(nrows=1, ncols=ncols, figsize=(12,4))
-        if waveform_plot: plot_waveform(waveform, sample_rate, ax=ax[0])
-        if melspec_plot: plot_melspec(waveform, sample_rate, ax=ax[ncols-1], ref=500) # ref=500 is a bit arbitrary but works good
+        if waveform_plot: plot_waveform(waveform, sample_rate, ax=ax[0] if ncols>1 else ax)
+        if melspec_plot: plot_melspec(waveform, sample_rate, ax=ax[ncols-1] if ncols>1 else ax, ref=ref)
