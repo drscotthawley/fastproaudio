@@ -62,7 +62,7 @@ nb_path: "01_td_demo.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Next line only executes on Colab.  Colab users: Please enable GPU in Edit &gt; Notebook settings</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Next line only executes on Colab. Colab users: Please enable GPU in Edit &gt; Notebook settings</span>
 <span class="o">!</span> <span class="o">[</span> -e /content <span class="o">]</span> <span class="o">&amp;&amp;</span> pip install -Uqq pip fastai git+https://github.com/drscotthawley/fastproaudio.git
 
 <span class="c1"># Additional installs for this tutorial</span>
@@ -453,7 +453,7 @@ Max:  0.144,  Min: -0.159, Mean: -0.000, Std Dev:  0.018
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">Args</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>  <span class="c1"># stand-in for parseargs </span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">Args</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>  <span class="c1"># stand-in for parseargs. these are all micro-tcn defaults</span>
     <span class="n">model_type</span> <span class="o">=</span><span class="s1">&#39;tcn&#39;</span>
     <span class="n">root_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="n">preload</span> <span class="o">=</span> <span class="kc">False</span>
@@ -570,7 +570,6 @@ Located 45 examples totaling 2.23 min in the val subset.
 <span class="c1">#from microtcn.lstm import LSTMModel # actually the LSTM depends on a lot of Lightning stuff, so we&#39;ll skip that</span>
 <span class="kn">from</span> <span class="nn">microtcn.utils</span> <span class="kn">import</span> <span class="n">center_crop</span><span class="p">,</span> <span class="n">causal_crop</span>
 
-
 <span class="k">class</span> <span class="nc">TCNModel_fastai</span><span class="p">(</span><span class="n">TCNModel</span><span class="p">):</span>
     <span class="s2">&quot;For fastai&#39;s sake, unpack the inputs and params&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -597,7 +596,8 @@ Located 45 examples totaling 2.23 min in the val subset.
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">train_configs</span> <span class="o">=</span> <span class="p">[</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># micro-tcn defines several different model configurations. I just chose one of them. </span>
+<span class="n">train_configs</span> <span class="o">=</span> <span class="p">[</span>
       <span class="p">{</span><span class="s2">&quot;name&quot;</span> <span class="p">:</span> <span class="s2">&quot;TCN-300&quot;</span><span class="p">,</span>
      <span class="s2">&quot;model_type&quot;</span> <span class="p">:</span> <span class="s2">&quot;tcn&quot;</span><span class="p">,</span>
      <span class="s2">&quot;nblocks&quot;</span> <span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
@@ -609,8 +609,7 @@ Located 45 examples totaling 2.23 min in the val subset.
     <span class="p">}</span>
 <span class="p">]</span>
 
-<span class="n">ind</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="n">dict_args</span> <span class="o">=</span> <span class="n">train_configs</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+<span class="n">dict_args</span> <span class="o">=</span> <span class="n">train_configs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">dict_args</span><span class="p">[</span><span class="s2">&quot;nparams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">TCNModel_fastai</span><span class="p">(</span><span class="o">**</span><span class="n">dict_args</span><span class="p">)</span>
@@ -638,7 +637,8 @@ Located 45 examples totaling 2.23 min in the val subset.
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">==</span> <span class="n">TCNModel_fastai</span><span class="p">:</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># this summary allows one to compare the original TCNModel with the TCNModel_fastai</span>
+<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">==</span> <span class="n">TCNModel_fastai</span><span class="p">:</span>
     <span class="n">torchsummary</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="n">args</span><span class="o">.</span><span class="n">train_length</span><span class="p">)],</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="n">torchsummary</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="n">args</span><span class="o">.</span><span class="n">train_length</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)],</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
@@ -776,12 +776,13 @@ Estimated Total Size (MB): 922.98
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">optim</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># I guess we could&#39;ve imported these up at the top of the notebook...</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">optim</span>
 <span class="kn">from</span> <span class="nn">fastai_minima.optimizer</span> <span class="kn">import</span> <span class="n">OptimWrapper</span>
 <span class="c1">#from fastai_minima.learner import Learner  # this doesn&#39;t include lr_find()</span>
 <span class="kn">from</span> <span class="nn">fastai.learner</span> <span class="kn">import</span> <span class="n">Learner</span>
 <span class="kn">from</span> <span class="nn">fastai_minima.learner</span> <span class="kn">import</span> <span class="n">DataLoaders</span>
-<span class="c1">#from fastai_minima.callback.training_utils import CudaCallback, ProgressCallback</span>
+<span class="c1">#from fastai_minima.callback.training_utils import CudaCallback, ProgressCallback # note sure if I need these</span>
 </pre></div>
 
     </div>
@@ -1309,7 +1310,7 @@ WandbCallback was not able to prepare a DataLoader for logging prediction sample
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">wandb</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">wandb</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span> <span class="c1"># call wandb.finish() after training or your logs may be incomplete</span>
 </pre></div>
 
     </div>
