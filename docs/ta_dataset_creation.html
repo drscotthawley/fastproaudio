@@ -496,6 +496,7 @@ hi
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">sr</span>
     
 <span class="k">def</span> <span class="nf">load_as_mc</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">file_list</span><span class="p">):</span>
+    <span class="s2">&quot;load as multichannel&quot;</span>
     <span class="n">accomp</span> <span class="o">=</span> <span class="n">get_accompanying_tracks</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">file_list</span><span class="p">)</span>
     <span class="n">num_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">accomp</span><span class="p">)</span>
     <span class="n">md</span> <span class="o">=</span> <span class="n">torchaudio</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>   <span class="c1"># TODO:fix: assumes all accompanying tracks are the same shape, etc! </span>
