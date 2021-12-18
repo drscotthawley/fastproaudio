@@ -12,7 +12,8 @@ index = {"URLs.AUDIOMDPI": "00_core.ipynb",
          "plot_waveform": "00_core.ipynb",
          "plot_melspec": "00_core.ipynb",
          "play_audio": "00_core.ipynb",
-         "show_audio": "00_core.ipynb"}
+         "show_audio": "00_core.ipynb",
+         "get_accompanying_tracks": "00_core.ipynb"}
 
 modules = ["core.py"]
 
