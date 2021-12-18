@@ -50,18 +50,30 @@ def show_info(waveform, sample_rate):
     print(f"Shape: {tuple(waveform.shape)}, Dtype: {waveform.dtype}, Duration: {waveform.shape[-1]/sample_rate} s")
     print(f"Max: {waveform.max().item():6.3f},  Min: {waveform.min().item():6.3f}, Mean: {waveform.mean().item():6.3f}, Std Dev: {waveform.std().item():6.3f}")
 
-def plot_waveform(waveform, sample_rate, ax=None, xlim=None, ylim=[-1,1]):
+def plot_waveform(
+    waveform,       # the tensor to plot.
+    sample_rate,    # used for labeling x-axis in terms of time
+    ax=None,        # can be an existing array of plot axes, or None
+    xlim=None,      # limits of x-axis
+    ylim=[-1,1],    # limits of y-axis
+    color = 'blue',      # can specify color for waveform plot
+    label = '',     # label for waveform plot
+    title= 'Waveform'):
     "Waveform plot, from https://pytorch.org/tutorials/beginner/audio_preprocessing_tutorial.html"
     if ax is None: fig, ax = plt.subplots()
     waveform = waveform.numpy()
+    if len(waveform.shape) < 2:  waveform =  waveform[np.newaxis, :]
     num_channels, num_frames = waveform.shape
     time_axis = torch.arange(0, num_frames) / sample_rate
-    for c in range(num_channels):
-        label = f'Channel {c+1}' if num_channels > 1 else ''
-        ax.plot(time_axis, waveform[c], linewidth=1, label=label)
+    if num_channels > 1:
+        for c in range(num_channels):
+            label = f'Channel {c+1}' if num_channels > 1 else ''  # overwrite label kwarg
+            ax.plot(time_axis, waveform[c], linewidth=1, label=label)
+    else:
+        ax.plot(time_axis, waveform[0], linewidth=1, color=color, label=label)
     ax.grid(True)
     if ylim: ax.set_ylim(ylim)
-    ax.title.set_text('Waveform')
+    ax.title.set_text(title)
     ax.set_xlabel('Time (s)')
     if num_channels > 1: ax.legend()
     if ax is None: plt.show(block=False)
@@ -77,24 +89,26 @@ def plot_melspec(waveform, sample_rate, ax=None, ref=np.max, vmin=-70, vmax=0):
     if ax is None: plt.show(block=False)
 
 def play_audio(waveform, sample_rate):
-    "From torchaudio preprocessing tutorial"
-    waveform = waveform.numpy()
-    num_channels, num_frames = waveform.shape
-    if num_channels == 1:
-        display(Audio(waveform[0], rate=sample_rate, normalize=False))
-    elif num_channels == 2:
-        display(Audio((waveform[0], waveform[1]), rate=sample_rate, normalize=False))
-    else:
-        raise ValueError("Waveform with more than 2 channels are not supported.")
+    """From torchaudio preprocessing tutorial.
+    note ipython docs claim Audio can already do multichannel: "# Can also do stereo or more channels"
+    """
+    display(Audio(waveform.numpy(), rate=sample_rate, normalize=False))
+
 
 def show_audio(waveform, sample_rate, info=True, play=True, plots=['waveform','melspec'], ref=500):
     "This display routine is an amalgam of the torchaudio tutorial and the librosa documentation:"
     # ref=500 is a bit arbitrary choice of reference intensity value but works well
     if info: show_info(waveform, sample_rate)
     if play: play_audio(waveform, sample_rate)
-    ncols = len(plots)
-    if  ncols > 0:
-        fig, ax = plt.subplots(nrows=1, ncols=ncols, figsize=(12,4))
-        for i, pstr in enumerate(plots):
-            if 'waveform'==pstr: plot_waveform(waveform, sample_rate, ax=ax[i] if ncols>1 else ax)
-            if 'melspec'==pstr:  plot_melspec(waveform,  sample_rate, ax=ax[i] if ncols>1 else ax, ref=ref)
+    num_channels = waveform.shape[0]
+    if num_channels <= 2:
+        ncols = len(plots)
+        if  ncols > 0:
+            fig, ax = plt.subplots(nrows=1, ncols=ncols, figsize=(12,4))
+            for i, pstr in enumerate(plots):
+                if 'waveform'==pstr: plot_waveform(waveform, sample_rate, ax=ax[i] if ncols>1 else ax)
+                if 'melspec'==pstr:  plot_melspec(waveform,  sample_rate, ax=ax[i] if ncols>1 else ax, ref=ref)
+    else:  # "multichannel audio" handled separately for backwards compatibility & needs of time-align project
+        fig, ax = plt.subplots(nrows=num_channels, ncols=1, figsize=(10,2*num_channels)) # just plot waveforms for now
+        for c in range(num_channels):
+            plot_waveform(waveform[c], sample_rate, ax=ax[c], title='', color=(['k','b','y','g','r']*10)[c], label=f"Channel {c}")
