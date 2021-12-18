@@ -641,6 +641,112 @@ Max:  1.000,  Min: -0.908, Mean:  0.000, Std Dev:  0.064
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Script-to-Pack-Mono-Files-as-MultiChannel">Script to Pack Mono Files as MultiChannel<a class="anchor-link" href="#Script-to-Pack-Mono-Files-as-MultiChannel"> </a></h2><p>The following is a script that...we'll somehow learn to move into the repo proper.</p>
+<p>by Matthew Rice</p>
+<p><code>$ cat pack_mono_stems_to_stereo.py</code></p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torchaudio</span>
+<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">wavfile</span>
+<span class="kn">import</span> <span class="nn">librosa</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Find accompanying tracks and pack them into 1 wav file. </span>
+<span class="sd">    Packing method: Input: 1 wav file w/input0, input1, click. Target: 1 wav file w/target0, target1 </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;directory&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">full_path_to_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">directory</span><span class="p">)</span>
+
+    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">full_path_to_dir</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">full_path_to_dir</span><span class="p">)</span><span class="si">}</span><span class="s2">_mc&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;Train&quot;</span><span class="p">))</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span><span class="p">))</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;Val&quot;</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">full_path_to_dir</span><span class="p">):</span> 
+        <span class="n">file_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">full_path_to_dir</span><span class="p">,</span> <span class="n">directory</span><span class="p">))</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Entering </span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_list</span><span class="p">):</span> 
+            <span class="n">current_file</span> <span class="o">=</span> <span class="n">file_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">tracks</span><span class="p">,</span> <span class="n">basename</span> <span class="o">=</span> <span class="n">get_accompanying_tracks</span><span class="p">(</span><span class="n">current_file</span><span class="p">,</span> <span class="n">file_list</span><span class="p">,</span> <span class="n">remove</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">track</span> <span class="ow">in</span> <span class="n">tracks</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">full_path_to_dir</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">track</span><span class="p">))</span>
+                    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">directory</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">tracks</span><span class="si">}</span><span class="s2">, creating </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">save_as_mc</span><span class="p">(</span><span class="n">basename</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+            <span class="c1"># create_wav(f, path)</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">get_accompanying_tracks</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">fn_list</span><span class="p">,</span> <span class="n">remove</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;&quot;Given one filename, and a list of all filenames, return a list of that filename and </span>
+<span class="sd">    any files it &#39;goes with&#39;</span>
+<span class="sd">    remove: remove these accompanying files from the main list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make a copies of fn &amp; fn_list with all hyphen+stuff removed. </span>
+    <span class="n">basename</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;-[a-zA-Z0-9]+&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span> 
+    <span class="n">basename_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;-[a-zA-Z0-9]+&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">fn_list</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">basename</span><span class="p">)</span>
+    <span class="c1"># get indices of all elements of basename_list matching basename, return original filenames</span>
+    <span class="n">accompanying</span> <span class="o">=</span> <span class="p">[</span><span class="n">fn_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">basename_list</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">basename</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">remove</span><span class="p">:</span> 
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">accompanying</span><span class="p">:</span> 
+            <span class="c1">#if x != fn: # don&#39;t remove the file we search on though</span>
+          <span class="n">fn_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  
+    <span class="k">return</span> <span class="p">(</span><span class="n">accompanying</span><span class="p">,</span> <span class="n">basename</span><span class="p">)</span> <span class="c1"># note accompanying list includes original file too</span>
+
+<span class="k">def</span> <span class="nf">create_wav</span><span class="p">(</span><span class="n">tracks</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create .wav file from tracks &quot;&quot;&quot;</span>
+    <span class="n">data</span><span class="o">=</span> <span class="p">[]</span>
+    <span class="n">save_as_mc</span><span class="p">(</span><span class="n">tracks</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+
+    <span class="c1"># output = np.empty(size*l)</span>
+    <span class="c1"># for i in range(l):</span>
+        <span class="c1"># output[i::l] = data[i]</span>
+
+
+
+
+    <span class="c1"># output = wave.open(name, &#39;wb&#39;)</span>
+    <span class="c1"># output.setparams(data[0][0])</span>
+    <span class="c1"># for i in range(len(data)):</span>
+    <span class="c1">#     output.writeframes(data[i][1])</span>
+    <span class="c1"># output.close()</span>
+<span class="k">def</span> <span class="nf">load_mono</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">torchaudio</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">sr</span>
+
+<span class="k">def</span> <span class="nf">save_as_mc</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">file_list</span><span class="p">,</span> <span class="n">output_path</span><span class="p">):</span>
+    <span class="n">accomp</span> <span class="o">=</span> <span class="n">get_accompanying_tracks</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">file_list</span><span class="p">)</span>
+    <span class="n">num_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">accomp</span><span class="p">)</span>
+    <span class="n">md</span> <span class="o">=</span> <span class="n">torchaudio</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>   <span class="c1"># TODO:fix: assumes all accompanying tracks are the same shape, etc! </span>
+    <span class="n">num_frames</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="n">num_frames</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">num_channels</span><span class="p">,</span><span class="n">num_frames</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">afile</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">accomp</span><span class="p">):</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">sr</span>  <span class="o">=</span> <span class="n">load_mono</span><span class="p">(</span><span class="n">afile</span><span class="p">)</span>
+    <span class="n">torchaudio</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sr</span><span class="p">)</span>
+    <span class="c1"># return data, sr</span>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
 </div>
  
 
