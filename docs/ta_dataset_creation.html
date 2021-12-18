@@ -31,7 +31,35 @@ nb_path: "03_ta_dataset_creation.ipynb"
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>by Jacob Stallings</p>
+<p>The job of the network is: given input and click track, produce the target.</p>
+<p>.... this was all in mono and with only one audio sample, but IRL we'll have multiple channels of audio and a variety of audio samples.   Speaking of:</p>
+<h2 id="Multi-Channel-Data-Format-/-Naming-Convention">Multi-Channel Data Format / Naming Convention<a class="anchor-link" href="#Multi-Channel-Data-Format-/-Naming-Convention"> </a></h2><p>Since the SignalTrain naming scheme and micro-tcn assume the existence of at least one "knob" or (conditioning parameter), we will use BPM values for the knob parameter.  Those values will be surrounded by double-underscores.</p>
+<p>The dataset(s) will exist in two forms:</p>
+<ul>
+<li><ol>
+<li>one version with ...<code>_mono/</code> directory name in which all the tracks are mono but they have a common naming convention (by adding a hyphen and alphanumeric string to the 'base' filename for that set of inputs or targets).  The name of the directory will end with <code>_mono</code> and it will contain <code>Train/</code>, <code>Val/</code> and <code>Test/</code> as per the SignalTrain dataset spec. </li>
+</ol>
+</li>
+</ul>
+<p>...Oh, and turns out micro-tcn needs at least two parameters so we'll make a dummy parameter.</p>
+<p>So here's an example set of mono files, as per the SignalTrain dataset convention with this new hyphen-designation:</p>
+
+<pre><code>input_235-0__1__60.wav
+input_235-1__1__60.wav
+input_235-2__1__60.wav
+target_235-0__1__60.wav
+target_235-1__1__60.wav
+target_235-2__1__60.wav</code></pre>
+<p>where "235" is in this case the common designation of the example number, -0 is the click track and -1, and -2 are audio channels, the <code>__1</code> is the dummy parameter (/knob), and <code>__60</code> is the BPM "knob" value.   (Yes, it's redundant to include the click twice, but see note below.)</p>
+<ul>
+<li><ol>
+<li>another version with ...<code>_mc/</code> directory name in which the mono tracks have been packed into multichannel WAV files.  For those, the click track will be added to <em>both</em> the input and the target, and it will be channel 0. Same Train, Val, Test subdirs.<br>
+{% include note.html content='Originally we were going to only bundle the click with the input and not the target, because it&#8217;s kind of redundant to make it part of the target, but it just makes everything line up better.  Another option we considered was the make the click the last channel rather than the first channel, but if we want the model to work with a variety of numbers-of-channels of inpus &amp; targets, putting it last would mean that the click appears at different channel locations...and our intuition is that the model can learn easier if the click is always in the same spot.   ' %}
+.
+{% include note.html content='Including the click in the target means that the network has to predict the click, which...that may be a colossally stupid waste of time.  And for a spectral-based code (e.g. with FFTs, which micro-tcn doesn&#8217;t do) predicting a delta function would likely generate tons of spectral artifacts. But we&#8217;re going to try this for now because we need to try something!' %}</li>
+</ol>
+</li>
+</ul>
 
 </div>
 </div>
