@@ -31,25 +31,7 @@ nb_path: "index.ipynb"
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Idea-behind-this-repo">Idea behind this repo<a class="anchor-link" href="#Idea-behind-this-repo"> </a></h2><p><code>fastaudio</code> focuses on spectrograms. <code>fastai</code> use cases tend to focus on classification. We need to go beyond those. Instead we'll focus on two things:</p>
-<ol>
-<li><p>autoregressive prediction in the time domain. We'll use an LSTM -- essentially adapting the language model lessons</p>
-</li>
-<li><p>audio-to-audio processing/translation (e.g. audio effects). We'll use stacked 1D convolutions like a U-Net</p>
-</li>
-</ol>
-<p>(you probably noticed already that task #1 could be in task #2, for the case of translating to audio shifted ahead by one sample.)</p>
-<h4 id="&quot;How-many-channels-of-audio-are-we-going-to-use?&quot;">"How many channels of audio are we going to use?"<a class="anchor-link" href="#&quot;How-many-channels-of-audio-are-we-going-to-use?&quot;"> </a></h4><p>That's up to the dataset!  We'll try our best to assume that it's just mono.</p>
-<h4 id="&quot;What-other-fastai-datatypes/projects-are-relevant?&quot;">"What other fastai datatypes/projects are relevant?"<a class="anchor-link" href="#&quot;What-other-fastai-datatypes/projects-are-relevant?&quot;"> </a></h4><p>There are three packages that are relevant for sequence modeling:</p>
-<ol>
-<li><p><code>fastaudio</code>, as we mentioned, is only for spectrogram classification. The <code>AudioBlock</code> makes batches using an entire audio file which then gets converted to spectrograms.  Instead, we want to progressively grab sequences of audio samples and as (uniform-length) chunks.</p>
-</li>
-<li><p>The <a href="https://timeseriesai.github.io/tsai/">Time Series Prediction</a> package is relevant, but the only time series output it seems to support is <a href="https://timeseriesai.github.io/tsai/#Univariate-Forecasting">"univariate forecasting"</a>.  Nope.</p>
-</li>
-<li>Language Modeling, e.g. Chapters <a href="https://github.com/fastai/fastbook/blob/master/10_nlp.ipynb">10</a> and <a href="https://github.com/fastai/fastbook/blob/master/12_nlp_dive.ipynb">12</a> from fastbook. Yea, that's the closest. We can treat the audio samples as if they were word vectors/embeddings: just make the tokenizer and numericalize methods to be no-ops (or we could use mu-law encoding).  Nice thing is the dimensionality of the embeddings is just equal to how many channels of audio you have. </li>
-</ol>
-<p>We'll use <em>some</em> of fastaudio but we'll also liberally rewrite/overwrite whatever we want.</p>
-<p>...And this may not be useful to more than a few core people. We'll see. ;-)</p>
+<h2 id="Idea-behind-this-repo">Idea behind this repo<a class="anchor-link" href="#Idea-behind-this-repo"> </a></h2><p><code>fastaudio</code> focuses on spectrograms. <code>fastai</code> use cases tend to focus on classification. We need to go beyond those.</p>
 
 </div>
 </div>
@@ -62,7 +44,9 @@ nb_path: "index.ipynb"
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p><code>pip install fastproaudio</code></p>
+<p><code>python -m pip install fastproaudio</code></p>
+<p>or for the latest version:</p>
+<p><code>python -m pip install git+https://github.com/drscotthawley/fastproaudio.git</code></p>
 
 </div>
 </div>
@@ -75,7 +59,7 @@ nb_path: "index.ipynb"
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Workin' on it!</p>
+<p>...Workin' on it!</p>
 
 </div>
 </div>
