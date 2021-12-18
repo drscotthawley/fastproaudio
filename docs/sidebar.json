@@ -2,6 +2,7 @@
   "fastproaudio": {
     "Overview": "/",
     "fastproaudio core": "core.html",
-    "Demo of End-to-End Time Domain Audio with fastai": "td_demo.html"
+    "Demo of End-to-End Time Domain Audio with fastai": "td_demo.html",
+    "Time Alignment with micro-tcn": "time_align.html"
   }
 }
