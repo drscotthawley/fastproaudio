@@ -17,3 +17,15 @@ or for the latest version:
 ## How to use
 
 ...Workin' on it! 
+
+## Contributing
+
+For this repo.  Then clone to your local machine....
+
+`pip install nbdev` 
+
+`nbdev_install_hooks`
+
+`nbdev_clean_nbs`
+
+`make git_update`  will commit and push your changes
