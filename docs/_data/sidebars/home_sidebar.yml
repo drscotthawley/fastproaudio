@@ -18,6 +18,9 @@ entries:
     - output: web,pdf
       title: Time Alignment with micro-tcn
       url: time_align.html
+    - output: web,pdf
+      title: Generating Dataset for Time Alignment Study
+      url: ta_dataset_creation.html
     output: web
     title: fastproaudio
   output: web

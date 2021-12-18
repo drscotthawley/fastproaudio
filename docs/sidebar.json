@@ -3,6 +3,7 @@
     "Overview": "/",
     "fastproaudio core": "core.html",
     "Demo of End-to-End Time Domain Audio with fastai": "td_demo.html",
-    "Time Alignment with micro-tcn": "time_align.html"
+    "Time Alignment with micro-tcn": "time_align.html",
+    "Generating Dataset for Time Alignment Study": "ta_dataset_creation.html"
   }
 }
