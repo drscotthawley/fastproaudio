@@ -792,6 +792,8 @@ Located 30 examples totaling 2.00 min in the val subset.
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#from microtcn.lstm import LSTMModel # actually the LSTM depends on a lot of Lightning stuff, so we&#39;ll skip that</span>
 <span class="kn">from</span> <span class="nn">microtcn.utils</span> <span class="kn">import</span> <span class="n">center_crop</span><span class="p">,</span> <span class="n">causal_crop</span>
 
+<span class="c1"># this is all exactly Christian&#39;s code except one tiny change in &quot;groups=&quot; for self.res in TCNBlock. </span>
+
 <span class="k">class</span> <span class="nc">FiLM</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
                  <span class="n">num_features</span><span class="p">,</span> 
@@ -835,7 +837,6 @@ Located 30 examples totaling 2.00 min in the val subset.
 
         <span class="n">groups</span> <span class="o">=</span> <span class="n">out_ch</span> <span class="k">if</span> <span class="n">grouped</span> <span class="ow">and</span> <span class="p">(</span><span class="n">in_ch</span> <span class="o">%</span> <span class="n">out_ch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
         
-        <span class="c1">#print(f&quot;1 in_ch={in_ch} out_ch={out_ch} kernel_size={kernel_size} padding={padding} dilation={dilation} groups={groups}&quot;)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span><span class="n">in_ch</span><span class="p">,</span> 
                                      <span class="n">out_ch</span><span class="p">,</span> 
                                      <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> 
@@ -852,17 +853,14 @@ Located 30 examples totaling 2.00 min in the val subset.
             <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">out_ch</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">PReLU</span><span class="p">(</span><span class="n">out_ch</span><span class="p">)</span>
-        <span class="c1">#print(f&quot;2 in_ch={in_ch} out_ch={out_ch} kernel_size={kernel_size} padding={padding} dilation={dilation} groups={groups}&quot;)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span><span class="n">in_ch</span><span class="p">,</span> 
                                    <span class="n">out_ch</span><span class="p">,</span> 
                                    <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                   <span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">,</span>
+                                   <span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">,</span> <span class="c1"># SHH: this is a change; Christian&#39;s original read =in_ch here. </span>
                                    <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="n">x_in</span> <span class="o">=</span> <span class="n">x</span>
-        <span class="c1">#print(&quot;TCNBlock.forward: x.shape = &quot;,x.shape)</span>
-        
+        <span class="n">x_in</span> <span class="o">=</span> <span class="n">x</span>        
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1">#if self.grouped: # apply pointwise conv</span>
         <span class="c1">#    x = self.conv1b(x)</span>
@@ -2077,7 +2075,7 @@ lemme see if I can embed some results below:</p>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="TODO:-Inference-/-Evaluation-/-Analysis">TODO: Inference / Evaluation / Analysis<a class="anchor-link" href="#TODO:-Inference-/-Evaluation-/-Analysis"> </a></h2><p>Load in the testing data</p>
+<h2 id="Inference-/-Evaluation">Inference / Evaluation<a class="anchor-link" href="#Inference-/-Evaluation"> </a></h2><p>Load in the testing data</p>
 
 </div>
 </div>
