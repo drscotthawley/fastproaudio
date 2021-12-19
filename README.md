@@ -20,7 +20,9 @@ or for the latest version:
 
 ## Contributing
 
-For this repo.  Then clone to your local machine....
+Fork this repo.  Then clone to your local machine... 
+
+TODO must come back and fill in more.  It will involve things like running the same commands associated with [Contributing to nbdev](https://nbdev.fast.ai/#Contributing):
 
 `pip install nbdev` 
 
