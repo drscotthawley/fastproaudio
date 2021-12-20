@@ -96,13 +96,13 @@ def play_audio(waveform, sample_rate):
     display(Audio(waveform.numpy(), rate=sample_rate, normalize=False))
 
 
-def show_audio(waveform, sample_rate, info=True, play=True, plots=['waveform','melspec'], ref=500):
+def show_audio(waveform, sample_rate, info=True, play=True, plots=['waveform','melspec'], ref=500, mc_plot=False):
     "This display routine is an amalgam of the torchaudio tutorial and the librosa documentation:"
     # ref=500 is a bit arbitrary choice of reference intensity value but works well
     if info: show_info(waveform, sample_rate)
     if play: play_audio(waveform, sample_rate)
     num_channels = waveform.shape[0]
-    if num_channels <= 2:
+    if (num_channels <= 2) and (not mc_plot):
         ncols = len(plots)
         if  ncols > 0:
             fig, ax = plt.subplots(nrows=1, ncols=ncols, figsize=(12,4))
