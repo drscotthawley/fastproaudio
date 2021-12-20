@@ -22,8 +22,11 @@ entries:
       title: Generating Dataset for Time Alignment Study
       url: ta_dataset_creation.html
     - output: web,pdf
-      title: Distortion with micro-tcn
+      title: Distortion - Yes
       url: distortion.html
+    - output: web,pdf
+      title: Reverb - Sort of
+      url: reverb.html
     output: web
     title: fastproaudio
   output: web

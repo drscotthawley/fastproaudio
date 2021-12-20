@@ -5,6 +5,7 @@
     "Demo of End-to-End Time Domain Audio with fastai": "td_demo.html",
     "Time Alignment with micro-tcn": "time_align.html",
     "Generating Dataset for Time Alignment Study": "ta_dataset_creation.html",
-    "Distortion with micro-tcn": "distortion.html"
+    "Distortion - Yes": "distortion.html",
+    "Reverb - Sort of": "reverb.html"
   }
 }
