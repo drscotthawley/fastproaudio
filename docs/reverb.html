@@ -115,7 +115,8 @@ Note: you may need to restart the kernel to use updated packages.
 <span class="kn">import</span> <span class="nn">re</span> 
 
 <span class="kn">import</span> <span class="nn">warnings</span>
-<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">module</span> <span class="o">=</span> <span class="s2">&quot;librosa\..*&quot;</span> <span class="p">)</span> <span class="c1"># mel-spectrogram plot keeps throwing matplotlib deprecation warnings</span>
+<span class="c1"># mel-spectrogram plot keeps throwing matplotlib deprecation warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">module</span> <span class="o">=</span> <span class="s2">&quot;librosa\..*&quot;</span> <span class="p">)</span> 
 </pre></div>
 
     </div>
@@ -132,8 +133,7 @@ Note: you may need to restart the kernel to use updated packages.
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data_dir</span> <span class="o">=</span> <span class="s1">&#39;/home/shawley/Dropbox/Data/time_align/data/timeAlignData_mono4_mc/&#39;</span>
-<span class="n">data_dir</span> <span class="o">=</span> <span class="s1">&#39;/home/shawley/datasets/pb_verb&#39;</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data_dir</span> <span class="o">=</span> <span class="s1">&#39;/home/shawley/datasets/pb_verb&#39;</span>
 <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">data_dir</span><span class="p">)</span> 
 
 <span class="n">fnames_in</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;/*/input*&#39;</span><span class="p">))</span>

@@ -113,6 +113,10 @@ Note: you may need to restart the kernel to use updated packages.
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">re</span> 
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="c1"># mel-spectrogram plot keeps throwing matplotlib deprecation warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">module</span> <span class="o">=</span> <span class="s2">&quot;librosa\..*&quot;</span> <span class="p">)</span> 
 </pre></div>
 
     </div>
